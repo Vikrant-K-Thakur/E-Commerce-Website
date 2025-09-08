@@ -1,0 +1,53 @@
+# ========================
+# Dependencies
+# ========================
+node_modules/
+
+# ========================
+# Build outputs
+# ========================
+.next/
+out/
+dist/
+
+# ========================
+# Logs
+# ========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ========================
+# Local environment variables
+# ========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ========================
+# OS-specific files
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# IDE/editor settings
+# ========================
+.vscode/
+.idea/
+
+# ========================
+# Miscellaneous
+# ========================
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# ========================
+# TypeScript build outputs
+# ========================
+*.tsbuildinfo
