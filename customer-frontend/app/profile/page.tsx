@@ -1,17 +1,14 @@
 "use client"
 import Link from "next/link"
-import { Bell, Edit, ChevronRight, Wallet, MapPin, ShoppingBag, Settings, LogOut } from "lucide-react"
+import { Bell, ChevronRight, Wallet, MapPin, ShoppingBag, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BottomNavigation } from "@/components/bottom-navigation"
+import { ProfileForm } from "@/components/profile-form"
+import { useAuth } from "@/contexts/auth-context"
 
-const user = {
-  name: "Maria Rodriguez",
-  email: "maria.r@example.com",
-  phone: "+1 (555) 123-4567",
-  avatar: "/placeholder.svg?height=80&width=80&text=MR",
-}
+
 
 const walletData = {
   balance: 2450.75,
@@ -50,6 +47,16 @@ const menuItems = [
 ]
 
 export default function ProfilePage() {
+  const { user, logout } = useAuth()
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p>Please log in to view your profile.</p>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
@@ -67,37 +74,7 @@ export default function ProfilePage() {
 
       <div className="p-4 space-y-6">
         {/* Profile Info */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <img
-                  src={user.avatar || "/placeholder.svg"}
-                  alt={user.name}
-                  className="w-16 h-16 rounded-full bg-muted"
-                />
-              </div>
-              <div className="flex-1 space-y-1">
-                <h2 className="text-xl font-semibold text-foreground">{user.name}</h2>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
-                <p className="text-sm text-muted-foreground">{user.phone}</p>
-              </div>
-              <Button variant="ghost" size="icon">
-                <Edit className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="flex gap-3 mt-4">
-              <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Profile
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                Change Password
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <ProfileForm />
 
         {/* Wallet & Rewards */}
         <Card>
@@ -196,6 +173,7 @@ export default function ProfilePage() {
             <Button
               variant="ghost"
               className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={logout}
             >
               <LogOut className="w-4 h-4 mr-3" />
               Log Out

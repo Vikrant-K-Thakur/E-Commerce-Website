@@ -9,25 +9,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/contexts/auth-context"
 
-const addresses = [
-  {
-    id: 1,
-    name: "Alice Johnson",
-    address: "123 Main Street, Apt 4B",
-    city: "Springfield, IL 62704",
-    phone: "+1 (555) 123-4567",
-    isDefault: true,
-  },
-  {
-    id: 2,
-    name: "Alice Johnson",
-    address: "456 Oak Avenue",
-    city: "Otherville, NY 10001",
-    phone: "+1 (555) 987-6543",
-    isDefault: false,
-  },
-]
+
 
 const deliveryOptions = [
   {
@@ -67,9 +51,21 @@ const paymentMethods = [
 ]
 
 export default function CheckoutPage() {
+  const { user } = useAuth()
   const [selectedAddress, setSelectedAddress] = useState("1")
   const [selectedDelivery, setSelectedDelivery] = useState("standard")
   const [selectedPayment, setSelectedPayment] = useState("")
+  
+  const addresses = [
+    {
+      id: 1,
+      name: user?.name || "User",
+      address: user?.address || "No address provided",
+      city: "",
+      phone: user?.phone || "",
+      isDefault: true,
+    }
+  ]
 
   const subtotal = 1120.7
   const shipping = selectedDelivery === "standard" ? 0 : selectedDelivery === "express" ? 14.5 : 29.0

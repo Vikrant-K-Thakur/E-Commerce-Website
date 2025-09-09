@@ -6,32 +6,22 @@ import { ArrowLeft, Plus, Edit, Trash2, Home, Building } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-
-const addresses = [
-  {
-    id: 1,
-    type: "home",
-    label: "Home",
-    name: "Maria Rodriguez",
-    address: "123 Main St, Apt 4B",
-    city: "Springfield, IL 62704",
-    phone: "+1 (555) 123-4567",
-    isDefault: true,
-  },
-  {
-    id: 2,
-    type: "work",
-    label: "Work",
-    name: "Maria Rodriguez",
-    address: "456 Oak Avenue",
-    city: "Otherville, NY 10001",
-    phone: "+1 (555) 987-6543",
-    isDefault: false,
-  },
-]
+import { useAuth } from "@/contexts/auth-context"
 
 export default function AddressesPage() {
-  const [addressList, setAddressList] = useState(addresses)
+  const { user } = useAuth()
+  const [addressList, setAddressList] = useState([
+    {
+      id: 1,
+      type: "home",
+      label: "Home",
+      name: user?.name || "User",
+      address: user?.address || "No address provided",
+      city: "",
+      phone: user?.phone || "",
+      isDefault: true,
+    }
+  ])
 
   const deleteAddress = (id: number) => {
     setAddressList((addresses) => addresses.filter((addr) => addr.id !== id))
@@ -101,7 +91,7 @@ export default function AddressesPage() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm font-medium text-foreground">{address.name}</p>
+                        <p className="text-sm font-medium text-foreground">{user?.name || address.name}</p>
                       </div>
                     </div>
 
@@ -123,9 +113,9 @@ export default function AddressesPage() {
                   </div>
 
                   <div className="space-y-1 text-sm text-muted-foreground">
-                    <p>{address.address}</p>
+                    <p>{user?.address || address.address}</p>
                     <p>{address.city}</p>
-                    <p>{address.phone}</p>
+                    <p>{user?.phone || address.phone}</p>
                   </div>
 
                   {!address.isDefault && (
