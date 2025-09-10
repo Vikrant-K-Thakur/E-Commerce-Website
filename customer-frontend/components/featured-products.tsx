@@ -1,56 +1,47 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Star, Heart } from "lucide-react"
 import { AuthGuard } from "@/components/auth-guard"
+import { getProducts } from "@/lib/products"
+import { useCart } from "@/contexts/cart-context"
 
-const featuredProducts = [
-  {
-    id: 1,
-    name: "Premium Cotton Dress Shirt",
-    price: 79.99,
-    originalPrice: 99.99,
-    rating: 4.8,
-    reviews: 234,
-    image: "/premium-white-cotton-dress-shirt.jpg",
-    category: "Formal Shirts",
-  },
-  {
-    id: 2,
-    name: "Classic Polo Shirt",
-    price: 49.99,
-    originalPrice: 59.99,
-    rating: 4.6,
-    reviews: 156,
-    image: "/navy-blue-polo-shirt.jpg",
-    category: "Polo Shirts",
-  },
-  {
-    id: 3,
-    name: "Casual Linen Shirt",
-    price: 65.99,
-    originalPrice: 79.99,
-    rating: 4.9,
-    reviews: 89,
-    image: "/light-blue-linen-casual-shirt.jpg",
-    category: "Casual Shirts",
-  },
-  {
-    id: 4,
-    name: "Luxury Silk Shirt",
-    price: 129.99,
-    originalPrice: 159.99,
-    rating: 4.7,
-    reviews: 312,
-    image: "/black-luxury-silk-shirt.jpg",
-    category: "Premium Collection",
-  },
-]
+interface Product {
+  id: string
+  name: string
+  price: number
+  description: string
+  image: string
+}
 
 export function FeaturedProducts() {
+  const [products, setProducts] = useState<Product[]>([])
+  const { addItem } = useCart()
+
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  const fetchProducts = async () => {
+    const data = await getProducts()
+    setProducts(data)
+  }
+
+  const handleAddToCart = (product: Product) => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image
+    })
+  }
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {featuredProducts.map((product) => (
+      {products.map((product) => (
         <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-card border-border/50">
           <div className="relative">
             <Link href={`/products/${product.id}`}>
@@ -65,40 +56,39 @@ export function FeaturedProducts() {
                 <Heart className="w-4 h-4 text-muted-foreground" />
               </button>
             </AuthGuard>
-            {product.originalPrice > product.price && (
-              <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded">
-                Sale
-              </div>
-            )}
           </div>
           <CardContent className="p-3 space-y-2">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">{product.category}</p>
               <h3 className="font-medium text-sm text-foreground line-clamp-2 text-balance">{product.name}</h3>
+              <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
             </div>
 
             <div className="flex items-center gap-1">
               <Star className="w-3 h-3 fill-primary text-primary" />
-              <span className="text-xs text-muted-foreground">
-                {product.rating} ({product.reviews})
-              </span>
+              <span className="text-xs text-muted-foreground">4.5 (0)</span>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="font-semibold text-foreground">${product.price}</span>
-              {product.originalPrice > product.price && (
-                <span className="text-xs text-muted-foreground line-through">${product.originalPrice}</span>
-              )}
             </div>
 
             <AuthGuard>
-              <Button size="sm" className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+              <Button
+                size="sm"
+                className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                onClick={() => handleAddToCart(product)}
+              >
                 Add to Cart
               </Button>
             </AuthGuard>
           </CardContent>
         </Card>
       ))}
+      {products.length === 0 && (
+        <div className="col-span-full text-center py-8 text-muted-foreground">
+          No products available. Admin can add products from the admin panel.
+        </div>
+      )}
     </div>
   )
 }

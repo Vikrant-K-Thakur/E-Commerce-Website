@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MongoClient } from 'mongodb'
 
-const client = new MongoClient(process.env.DATABASE_URL!)
+const client = new MongoClient(process.env.DATABASE_URL!, {
+  tls: true,
+  tlsAllowInvalidCertificates: true,
+  tlsAllowInvalidHostnames: true,
+  serverSelectionTimeoutMS: 5000,
+  connectTimeoutMS: 10000,
+})
 
 async function connectDB() {
   try {
