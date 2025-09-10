@@ -6,6 +6,8 @@ import { Home, Search, ShoppingCart, Heart, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AuthGuard } from "@/components/auth-guard"
 import { useAuth } from "@/contexts/auth-context"
+import { useCart } from "@/contexts/cart-context"
+import { useWishlist } from "@/contexts/wishlist-context"
 
 const navItems = [
   { href: "/", icon: Home, label: "Home", requireAuth: false },
@@ -18,6 +20,14 @@ const navItems = [
 export function BottomNavigation() {
   const pathname = usePathname()
   const { user } = useAuth()
+  const { totalItems: cartCount } = useCart()
+  const { items: wishlistItems } = useWishlist()
+
+  const getItemCount = (href: string) => {
+    if (href === "/cart") return cartCount
+    if (href === "/wishlist") return wishlistItems.length
+    return 0
+  }
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t border-border z-50 sm:hidden">
@@ -37,8 +47,10 @@ export function BottomNavigation() {
                 >
                   <div className="relative">
                     <IconComponent className="w-5 h-5" />
-                    {item.href === "/cart" && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></span>
+                    {(item.href === "/cart" || item.href === "/wishlist") && getItemCount(item.href) > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-secondary text-secondary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-medium">
+                        {getItemCount(item.href)}
+                      </span>
                     )}
                   </div>
                   <span className="text-xs font-medium">{item.label}</span>
@@ -58,8 +70,10 @@ export function BottomNavigation() {
             >
               <div className="relative">
                 <IconComponent className="w-5 h-5" />
-                {item.href === "/cart" && user && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></span>
+                {(item.href === "/cart" || item.href === "/wishlist") && getItemCount(item.href) > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-secondary text-secondary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-medium">
+                    {getItemCount(item.href)}
+                  </span>
                 )}
               </div>
               <span className="text-xs font-medium">{item.label}</span>

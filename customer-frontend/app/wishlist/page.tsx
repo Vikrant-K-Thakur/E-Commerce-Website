@@ -6,48 +6,24 @@ import { ArrowLeft, Heart, ShoppingCart, Star, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-
-const wishlistItems = [
-  {
-    id: 1,
-    name: "Wireless Earbuds",
-    price: 89.99,
-    originalPrice: 119.99,
-    rating: 4.5,
-    reviews: 128,
-    image: "/wireless-earbuds.png",
-    inStock: true,
-  },
-  {
-    id: 2,
-    name: "Laptop Sleeve",
-    price: 24.99,
-    originalPrice: 34.99,
-    rating: 4.3,
-    reviews: 67,
-    image: "/placeholder.svg?height=120&width=120&text=Sleeve",
-    inStock: true,
-  },
-  {
-    id: 3,
-    name: "Premium Headphones",
-    price: 199.99,
-    rating: 4.8,
-    reviews: 245,
-    image: "/placeholder.svg?height=120&width=120&text=Headphones",
-    inStock: false,
-  },
-]
+import { useWishlist } from "@/contexts/wishlist-context"
+import { useCart } from "@/contexts/cart-context"
 
 export default function WishlistPage() {
-  const [items, setItems] = useState(wishlistItems)
   const [searchQuery, setSearchQuery] = useState("")
-
-  const removeFromWishlist = (id: number) => {
-    setItems((items) => items.filter((item) => item.id !== id))
-  }
+  const { items, removeFromWishlist } = useWishlist()
+  const { addItem } = useCart()
 
   const filteredItems = items.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+
+  const handleAddToCart = (item: any) => {
+    addItem({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.image
+    })
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,8 +56,7 @@ export default function WishlistPage() {
         {filteredItems.length > 0 ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""} •{" "}
-              {filteredItems.filter((item) => item.inStock).length} in stock
+              {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""}
             </p>
 
             <div className="grid grid-cols-2 gap-4">
@@ -95,36 +70,26 @@ export default function WishlistPage() {
                     >
                       <Heart className="w-4 h-4 text-destructive fill-destructive" />
                     </button>
-                    {!item.inStock && (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="text-white text-xs font-medium">Out of Stock</span>
-                      </div>
-                    )}
                   </div>
                   <CardContent className="p-3 space-y-2">
                     <h3 className="font-medium text-sm line-clamp-2 text-balance">{item.name}</h3>
 
                     <div className="flex items-center gap-1">
                       <Star className="w-3 h-3 fill-primary text-primary" />
-                      <span className="text-xs text-muted-foreground">
-                        {item.rating} ({item.reviews})
-                      </span>
+                      <span className="text-xs text-muted-foreground">4.5 (0)</span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">${item.price}</span>
-                      {item.originalPrice && item.originalPrice > item.price && (
-                        <span className="text-xs text-muted-foreground line-through">${item.originalPrice}</span>
-                      )}
+                      <span className="font-semibold text-sm">₹{item.price}</span>
                     </div>
 
                     <Button
                       size="sm"
                       className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                      disabled={!item.inStock}
+                      onClick={() => handleAddToCart(item)}
                     >
                       <ShoppingCart className="w-3 h-3 mr-1" />
-                      {item.inStock ? "Add to Cart" : "Out of Stock"}
+                      Add to Cart
                     </Button>
                   </CardContent>
                 </Card>

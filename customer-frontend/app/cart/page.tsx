@@ -2,75 +2,18 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, Minus, Trash2, Heart, Tag } from "lucide-react"
+import { ArrowLeft, Plus, Minus, Trash2, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-
-// Mock cart data
-const initialCartItems = [
-  {
-    id: 1,
-    name: "Elegant Ceramic Mixing Bowls - Set of 3",
-    price: 49.99,
-    originalPrice: 59.99,
-    quantity: 1,
-    image: "/placeholder.svg?height=80&width=80&text=Bowls",
-    size: "Large",
-    color: "White",
-  },
-  {
-    id: 2,
-    name: "Sony WH-1000XM5 Black Wireless Noise-Cancelling Headphones",
-    price: 399.99,
-    quantity: 1,
-    image: "/placeholder.svg?height=80&width=80&text=Headphones",
-    size: null,
-    color: "Black",
-  },
-]
-
-const savedForLaterItems = [
-  {
-    id: 3,
-    name: "Premium Leather Wallet",
-    price: 89.99,
-    originalPrice: 119.99,
-    image: "/placeholder.svg?height=80&width=80&text=Wallet",
-  },
-]
+import { useCart } from "@/contexts/cart-context"
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState(initialCartItems)
-  const [savedItems, setSavedItems] = useState(savedForLaterItems)
+  const { items: cartItems, updateQuantity, removeItem, totalPrice, totalItems } = useCart()
   const [couponCode, setCouponCode] = useState("")
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null)
-
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity === 0) {
-      setCartItems((items) => items.filter((item) => item.id !== id))
-    } else {
-      setCartItems((items) => items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)))
-    }
-  }
-
-  const moveToSaved = (id: number) => {
-    const item = cartItems.find((item) => item.id === id)
-    if (item) {
-      setCartItems((items) => items.filter((item) => item.id !== id))
-      setSavedItems((items) => [...items, { ...item, quantity: undefined }])
-    }
-  }
-
-  const moveToCart = (id: number) => {
-    const item = savedItems.find((item) => item.id === id)
-    if (item) {
-      setSavedItems((items) => items.filter((item) => item.id !== id))
-      setCartItems((items) => [...items, { ...item, quantity: 1 }])
-    }
-  }
 
   const applyCoupon = () => {
     if (couponCode.toLowerCase() === "save10") {
@@ -79,10 +22,9 @@ export default function CartPage() {
     }
   }
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const discount = appliedCoupon ? subtotal * 0.1 : 0
-  const shipping = subtotal > 50 ? 0 : 8.99
-  const total = subtotal - discount + shipping
+  const discount = appliedCoupon ? totalPrice * 0.1 : 0
+  const shipping = totalPrice > 50 ? 0 : 8.99
+  const total = totalPrice - discount + shipping
 
   return (
     <div className="min-h-screen bg-background">
@@ -104,10 +46,7 @@ export default function CartPage() {
         {cartItems.length > 0 ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Electronics</h2>
-              <Button variant="ghost" size="sm" className="text-secondary">
-                View All
-              </Button>
+              <h2 className="text-lg font-semibold">Cart Items ({totalItems})</h2>
             </div>
 
             {cartItems.map((item) => (
@@ -122,17 +61,10 @@ export default function CartPage() {
                     <div className="flex-1 space-y-2">
                       <div className="space-y-1">
                         <h3 className="font-medium text-sm line-clamp-2 text-balance">{item.name}</h3>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          {item.size && <span>Size: {item.size}</span>}
-                          {item.color && <span>Color: {item.color}</span>}
-                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">${item.price}</span>
-                        {item.originalPrice && item.originalPrice > item.price && (
-                          <span className="text-sm text-muted-foreground line-through">${item.originalPrice}</span>
-                        )}
+                        <span className="font-semibold">₹{item.price}</span>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -157,15 +89,11 @@ export default function CartPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => moveToSaved(item.id)} className="text-xs">
-                            <Heart className="w-3 h-3 mr-1" />
-                            Save for Later
-                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-destructive"
-                            onClick={() => updateQuantity(item.id, 0)}
+                            onClick={() => removeItem(item.id)}
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
@@ -183,38 +111,6 @@ export default function CartPage() {
             <Link href="/">
               <Button className="mt-4">Continue Shopping</Button>
             </Link>
-          </div>
-        )}
-
-        {/* Saved for Later */}
-        {savedItems.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Books & Media</h2>
-            {savedItems.map((item) => (
-              <Card key={item.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex gap-4">
-                    <img
-                      src={item.image || "/placeholder.svg"}
-                      alt={item.name}
-                      className="w-16 h-16 object-cover rounded-lg bg-muted"
-                    />
-                    <div className="flex-1 space-y-2">
-                      <h3 className="font-medium text-sm line-clamp-2 text-balance">{item.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">${item.price}</span>
-                        {item.originalPrice && item.originalPrice > item.price && (
-                          <span className="text-sm text-muted-foreground line-through">${item.originalPrice}</span>
-                        )}
-                      </div>
-                      <Button size="sm" variant="outline" onClick={() => moveToCart(item.id)} className="text-xs">
-                        Add to Cart
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         )}
 
@@ -266,27 +162,27 @@ export default function CartPage() {
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Subtotal ({cartItems.length} items)</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>Subtotal ({totalItems} items)</span>
+                  <span>₹{totalPrice.toFixed(2)}</span>
                 </div>
 
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount</span>
-                    <span>-${discount.toFixed(2)}</span>
+                    <span>-₹{discount.toFixed(2)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>{shipping === 0 ? "Free" : `$${shipping.toFixed(2)}`}</span>
+                  <span>{shipping === 0 ? "Free" : `₹${shipping.toFixed(2)}`}</span>
                 </div>
 
                 <Separator />
 
                 <div className="flex justify-between font-semibold text-base">
                   <span>Estimated Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>₹{total.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -295,7 +191,7 @@ export default function CartPage() {
                   <input type="checkbox" id="wallet" className="rounded" />
                   <label htmlFor="wallet">Use Wallet & Coins</label>
                 </div>
-                <p className="text-xs text-muted-foreground">Current balance: $8,854. Available for this order.</p>
+                <p className="text-xs text-muted-foreground">Current balance: ₹8,854. Available for this order.</p>
               </div>
 
               <Link href="/checkout">

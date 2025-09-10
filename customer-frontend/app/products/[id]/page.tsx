@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { getProducts } from "@/lib/products"
 import { useCart } from "@/contexts/cart-context"
+import { useWishlist } from "@/contexts/wishlist-context"
 
 interface Product {
   id: string
@@ -45,6 +46,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const [product, setProduct] = useState<Product | null>(null)
   const [quantity, setQuantity] = useState(1)
   const { addItem } = useCart()
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
 
   useEffect(() => {
     fetchProduct()
@@ -66,6 +68,21 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           image: product.image
         })
       }
+    }
+  }
+
+  const handleWishlistToggle = () => {
+    if (!product) return
+    
+    if (isInWishlist(product.id)) {
+      removeFromWishlist(product.id)
+    } else {
+      addToWishlist({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image
+      })
     }
   }
 
@@ -91,8 +108,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             <Button variant="ghost" size="icon">
               <Share className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="icon">
-              <Heart className="w-5 h-5" />
+            <Button variant="ghost" size="icon" onClick={handleWishlistToggle}>
+              <Heart className={`w-5 h-5 ${product && isInWishlist(product.id) ? 'text-red-500 fill-red-500' : ''}`} />
             </Button>
           </div>
         </div>

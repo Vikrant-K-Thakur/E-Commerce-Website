@@ -8,6 +8,7 @@ import { Star, Heart } from "lucide-react"
 import { AuthGuard } from "@/components/auth-guard"
 import { getProducts } from "@/lib/products"
 import { useCart } from "@/contexts/cart-context"
+import { useWishlist } from "@/contexts/wishlist-context"
 
 interface Product {
   id: string
@@ -20,6 +21,7 @@ interface Product {
 export function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([])
   const { addItem } = useCart()
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
 
   useEffect(() => {
     fetchProducts()
@@ -39,6 +41,19 @@ export function FeaturedProducts() {
     })
   }
 
+  const handleWishlistToggle = (product: Product) => {
+    if (isInWishlist(product.id)) {
+      removeFromWishlist(product.id)
+    } else {
+      addToWishlist({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image
+      })
+    }
+  }
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {products.map((product) => (
@@ -52,8 +67,11 @@ export function FeaturedProducts() {
               />
             </Link>
             <AuthGuard>
-              <button className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background/90 transition-colors">
-                <Heart className="w-4 h-4 text-muted-foreground" />
+              <button 
+                className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background/90 transition-colors"
+                onClick={() => handleWishlistToggle(product)}
+              >
+                <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? 'text-red-500 fill-red-500' : 'text-muted-foreground'}`} />
               </button>
             </AuthGuard>
           </div>
@@ -63,10 +81,7 @@ export function FeaturedProducts() {
               <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
             </div>
 
-            <div className="flex items-center gap-1">
-              <Star className="w-3 h-3 fill-primary text-primary" />
-              <span className="text-xs text-muted-foreground">4.5 (0)</span>
-            </div>
+
 
             <div className="flex items-center gap-2">
               <span className="font-semibold text-foreground">${product.price}</span>

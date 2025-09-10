@@ -1,39 +1,36 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Filter, Grid, List } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BottomNavigation } from "@/components/bottom-navigation"
-
-const searchResults = [
-  {
-    id: 1,
-    name: "Premium Cotton T-Shirt",
-    price: 29.99,
-    originalPrice: 39.99,
-    rating: 4.8,
-    reviews: 124,
-    image: "/premium-cotton-t-shirt.png",
-    category: "Apparel",
-  },
-  {
-    id: 2,
-    name: "Wireless Earbuds Pro",
-    price: 89.99,
-    originalPrice: 119.99,
-    rating: 4.6,
-    reviews: 89,
-    image: "/wireless-earbuds.png",
-    category: "Electronics",
-  },
-]
+import { getProducts } from "@/lib/products"
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [products, setProducts] = useState<any[]>([])
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  useEffect(() => {
+    const filtered = products.filter(product =>
+      product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    setFilteredProducts(filtered)
+  }, [searchQuery, products])
+
+  const fetchProducts = async () => {
+    const data = await getProducts()
+    setProducts(data)
+    setFilteredProducts(data)
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -56,7 +53,7 @@ export default function SearchPage() {
           </div>
 
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">{searchResults.length} results found</p>
+            <p className="text-sm text-muted-foreground">{filteredProducts.length} results found</p>
             <div className="flex items-center gap-1">
               <Button
                 variant={viewMode === "grid" ? "default" : "ghost"}
@@ -82,7 +79,7 @@ export default function SearchPage() {
       {/* Search Results */}
       <div className="p-4">
         <div className={viewMode === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}>
-          {searchResults.map((product) => (
+          {filteredProducts.map((product) => (
             <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="relative">
                 <img
@@ -90,23 +87,15 @@ export default function SearchPage() {
                   alt={product.name}
                   className={viewMode === "grid" ? "w-full h-40 object-cover" : "w-20 h-20 object-cover"}
                 />
-                {product.originalPrice > product.price && (
-                  <Badge className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs">
-                    Sale
-                  </Badge>
-                )}
               </div>
               <CardContent className="p-3 space-y-2">
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">{product.category}</p>
                   <h3 className="font-medium text-sm line-clamp-2 text-balance">{product.name}</h3>
+                  <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">${product.price}</span>
-                  {product.originalPrice > product.price && (
-                    <span className="text-xs text-muted-foreground line-through">${product.originalPrice}</span>
-                  )}
+                  <span className="font-semibold">₹{product.price}</span>
                 </div>
 
                 <Button size="sm" className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
@@ -116,6 +105,12 @@ export default function SearchPage() {
             </Card>
           ))}
         </div>
+        
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No products found</p>
+          </div>
+        )}
       </div>
 
       <BottomNavigation />

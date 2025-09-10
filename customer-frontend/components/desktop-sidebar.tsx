@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { Home, Shirt, ShoppingCart, Heart, User, Search, Menu, X, Star, Gift, Bell } from "lucide-react"
 import { AuthGuard } from "@/components/auth-guard"
 import { cn } from "@/lib/utils"
+import { useCart } from "@/contexts/cart-context"
+import { useWishlist } from "@/contexts/wishlist-context"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
@@ -16,9 +18,9 @@ const navigation = [
   { name: "Search", href: "/search", icon: Search },
 ]
 
-const userNavigation = [
-  { name: "Cart", href: "/cart", icon: ShoppingCart, badge: "3" },
-  { name: "Wishlist", href: "/wishlist", icon: Heart, badge: "5" },
+const baseUserNavigation = [
+  { name: "Cart", href: "/cart", icon: ShoppingCart, type: "cart" },
+  { name: "Wishlist", href: "/wishlist", icon: Heart, type: "wishlist" },
   { name: "Profile", href: "/profile", icon: User },
   { name: "Rewards", href: "/rewards", icon: Star },
   { name: "Notifications", href: "/notifications", icon: Bell, badge: "2" },
@@ -27,6 +29,18 @@ const userNavigation = [
 export function DesktopSidebar() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const { totalItems: cartCount } = useCart()
+  const { items: wishlistItems } = useWishlist()
+
+  const userNavigation = baseUserNavigation.map(item => {
+    if (item.type === "cart" && cartCount > 0) {
+      return { ...item, badge: cartCount.toString() }
+    }
+    if (item.type === "wishlist" && wishlistItems.length > 0) {
+      return { ...item, badge: wishlistItems.length.toString() }
+    }
+    return item
+  })
 
   return (
     <>

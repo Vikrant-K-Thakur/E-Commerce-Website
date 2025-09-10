@@ -10,7 +10,7 @@ export interface Product {
 
 export async function getProducts(): Promise<Product[]> {
   try {
-    const response = await fetch('/api/products')   
+    const response = await fetch('/api/products')
     const result = await response.json()
     return result.success ? result.data : []
   } catch (error) {
@@ -29,7 +29,7 @@ export async function addProduct(product: {
     const response = await fetch('/api/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(product)
+      body: JSON.stringify(product),
     })
     const result = await response.json()
     return result.success ? result.data : null
@@ -41,9 +41,7 @@ export async function addProduct(product: {
 
 export async function deleteProduct(id: string): Promise<boolean> {
   try {
-    const response = await fetch(`/api/products?id=${id}`, {
-      method: 'DELETE'
-    })
+    const response = await fetch(`/api/products?id=${id}`, { method: 'DELETE' })
     const result = await response.json()
     return result.success
   } catch (error) {
