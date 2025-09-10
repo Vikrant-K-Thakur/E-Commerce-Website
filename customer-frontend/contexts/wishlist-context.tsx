@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { saveWishlist, getWishlist } from '@/lib/database'
 import { useAuth } from './auth-context'
 
 interface WishlistItem {
@@ -24,31 +25,31 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<WishlistItem[]>([])
   const { user } = useAuth()
 
+  // Load wishlist from database when user logs in
   useEffect(() => {
     if (user?.email) {
-      loadWishlist()
+      loadWishlistFromDB()
     } else {
       setItems([])
     }
   }, [user?.email])
 
+  // Save wishlist to database whenever items change
   useEffect(() => {
     if (user?.email && items.length >= 0) {
-      saveWishlist()
+      saveWishlistToDB()
     }
   }, [items, user?.email])
 
-  const loadWishlist = () => {
+  const loadWishlistFromDB = async () => {
     if (!user?.email) return
-    const saved = localStorage.getItem(`wishlist_${user.email}`)
-    if (saved) {
-      setItems(JSON.parse(saved))
-    }
+    const wishlistItems = await getWishlist(user.email)
+    setItems(wishlistItems)
   }
 
-  const saveWishlist = () => {
+  const saveWishlistToDB = async () => {
     if (!user?.email) return
-    localStorage.setItem(`wishlist_${user.email}`, JSON.stringify(items))
+    await saveWishlist(user.email, items)
   }
 
   const addToWishlist = (item: WishlistItem) => {
