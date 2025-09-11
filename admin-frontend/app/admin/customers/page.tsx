@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,72 +19,49 @@ import {
   TrendingUp,
   TrendingDown,
   MoreHorizontal,
+  Loader2,
 } from "lucide-react"
 
-const customerData = [
-  {
-    id: 1,
-    name: "Alice Smith",
-    email: "alice.s@example.com",
-    phone: "+1-555-123-4567",
-    walletBalance: 250.75,
-    loyaltyCoins: 500,
-    status: "Active",
-    orderHistory: 12,
-    joinDate: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Bob Johnson",
-    email: "bob.j@example.com",
-    phone: "+1-555-987-6543",
-    walletBalance: 150.0,
-    loyaltyCoins: 1200,
-    status: "Active",
-    orderHistory: 8,
-    joinDate: "2024-02-20",
-  },
-  {
-    id: 3,
-    name: "Charlie Brown",
-    email: "charlie.b@example.com",
-    phone: "+1-555-456-7890",
-    walletBalance: 75.25,
-    loyaltyCoins: 150,
-    status: "Blocked",
-    orderHistory: 3,
-    joinDate: "2024-03-10",
-  },
-  {
-    id: 4,
-    name: "Diana Prince",
-    email: "diana.p@example.com",
-    phone: "+1-555-321-0987",
-    walletBalance: 425.5,
-    loyaltyCoins: 800,
-    status: "Active",
-    orderHistory: 25,
-    joinDate: "2023-12-05",
-  },
-  {
-    id: 5,
-    name: "Eve Adams",
-    email: "eve.a@example.com",
-    phone: "+1-555-555-1234",
-    walletBalance: 0.0,
-    loyaltyCoins: 950,
-    status: "Active",
-    orderHistory: 15,
-    joinDate: "2024-01-30",
-  },
-]
+interface Customer {
+  id: string
+  name: string
+  email: string
+  phone: string
+  walletBalance: number
+  loyaltyCoins: number
+  status: string
+  orderHistory: number
+  joinDate: string
+  address?: string
+}
 
 export default function CustomerManagement() {
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [loading, setLoading] = useState(true)
   const itemsPerPage = 5
 
-  const filteredCustomers = customerData.filter(
+  useEffect(() => {
+    fetchCustomers()
+  }, [])
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/customers')
+      const result = await response.json()
+      if (result.success) {
+        setCustomers(result.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch customers:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -95,12 +72,12 @@ export default function CustomerManagement() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + itemsPerPage)
 
-  const handleStatusChange = (customerId: number, newStatus: string) => {
+  const handleStatusChange = (customerId: string, newStatus: string) => {
     // TODO: Implement status change logic
     console.log(`Changing customer ${customerId} status to ${newStatus}`)
   }
 
-  const handleSendDiscount = (customerId: number) => {
+  const handleSendDiscount = (customerId: string) => {
     // TODO: Implement discount sending logic
     console.log(`Sending discount to customer ${customerId}`)
   }
@@ -122,10 +99,10 @@ export default function CustomerManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Customers</p>
-                <p className="text-3xl font-bold text-gray-900">2,543</p>
+                <p className="text-3xl font-bold text-gray-900">{customers.length}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+12.5%</span>
+                  <span className="text-sm text-green-600">+0%</span>
                 </div>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -140,10 +117,10 @@ export default function CustomerManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Customers</p>
-                <p className="text-3xl font-bold text-gray-900">2,109</p>
+                <p className="text-3xl font-bold text-gray-900">{customers.filter(c => c.status === 'Active').length}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+8.2%</span>
+                  <span className="text-sm text-green-600">+0%</span>
                 </div>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -158,10 +135,14 @@ export default function CustomerManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">New This Month</p>
-                <p className="text-3xl font-bold text-gray-900">87</p>
+                <p className="text-3xl font-bold text-gray-900">{customers.filter(c => {
+                  const joinDate = new Date(c.joinDate)
+                  const now = new Date()
+                  return joinDate.getMonth() === now.getMonth() && joinDate.getFullYear() === now.getFullYear()
+                }).length}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <TrendingDown className="w-4 h-4 text-red-600" />
-                  <span className="text-sm text-red-600">-2.4%</span>
+                  <TrendingUp className="w-4 h-4 text-green-600" />
+                  <span className="text-sm text-green-600">+0%</span>
                 </div>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -176,10 +157,10 @@ export default function CustomerManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Loyalty Coins</p>
-                <p className="text-3xl font-bold text-gray-900">5,678</p>
+                <p className="text-3xl font-bold text-gray-900">{customers.reduce((total, c) => total + c.loyaltyCoins, 0).toLocaleString()}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+15.3%</span>
+                  <span className="text-sm text-green-600">+0%</span>
                 </div>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -218,106 +199,121 @@ export default function CustomerManagement() {
 
           {/* Customer Table */}
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">NAME</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">EMAIL</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">PHONE</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">WALLET BALANCE</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">LOYALTY COINS</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">STATUS</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER HISTORY</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedCustomers.map((customer) => (
-                  <tr key={customer.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600">
-                            {customer.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </span>
-                        </div>
-                        <span className="font-medium text-gray-900">{customer.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 text-gray-600">{customer.email}</td>
-                    <td className="py-4 px-4 text-gray-600">{customer.phone}</td>
-                    <td className="py-4 px-4">
-                      <span className="font-medium text-gray-900">${customer.walletBalance.toFixed(2)}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="font-medium text-gray-900">{customer.loyaltyCoins.toLocaleString()}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <Badge
-                        variant={customer.status === "Active" ? "default" : "destructive"}
-                        className={customer.status === "Active" ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}
-                      >
-                        {customer.status}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-4">
-                      <Button variant="link" className="p-0 h-auto text-blue-600">
-                        {customer.orderHistory} orders
-                      </Button>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={
-                            customer.status === "Active"
-                              ? "text-red-600 hover:text-red-700 hover:bg-red-50"
-                              : "text-green-600 hover:text-green-700 hover:bg-green-50"
-                          }
-                          onClick={() =>
-                            handleStatusChange(customer.id, customer.status === "Active" ? "Blocked" : "Active")
-                          }
-                        >
-                          <Ban className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                          onClick={() => handleSendDiscount(customer.id)}
-                        >
-                          <Percent className="w-4 h-4" />
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-700">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>View Profile</DropdownMenuItem>
-                            <DropdownMenuItem>Edit Customer</DropdownMenuItem>
-                            <DropdownMenuItem>Send Message</DropdownMenuItem>
-                            <DropdownMenuItem>View Orders</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <span className="ml-2 text-gray-600">Loading customers...</span>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">NAME</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">EMAIL</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">PHONE</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">WALLET BALANCE</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">LOYALTY COINS</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">STATUS</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER HISTORY</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ACTIONS</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginatedCustomers.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-gray-500">
+                        No customers found
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedCustomers.map((customer) => (
+                      <tr key={customer.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-medium text-gray-600">
+                                {customer.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </span>
+                            </div>
+                            <span className="font-medium text-gray-900">{customer.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-gray-600">{customer.email}</td>
+                        <td className="py-4 px-4 text-gray-600">{customer.phone}</td>
+                        <td className="py-4 px-4">
+                          <span className="font-medium text-gray-900">${customer.walletBalance.toFixed(2)}</span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="font-medium text-gray-900">{customer.loyaltyCoins.toLocaleString()}</span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <Badge
+                            variant={customer.status === "Active" ? "default" : "destructive"}
+                            className={customer.status === "Active" ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}
+                          >
+                            {customer.status}
+                          </Badge>
+                        </td>
+                        <td className="py-4 px-4">
+                          <Button variant="link" className="p-0 h-auto text-blue-600">
+                            {customer.orderHistory} orders
+                          </Button>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={
+                                customer.status === "Active"
+                                  ? "text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  : "text-green-600 hover:text-green-700 hover:bg-green-50"
+                              }
+                              onClick={() =>
+                                handleStatusChange(customer.id, customer.status === "Active" ? "Blocked" : "Active")
+                              }
+                            >
+                              <Ban className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              onClick={() => handleSendDiscount(customer.id)}
+                            >
+                              <Percent className="w-4 h-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-700">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>View Profile</DropdownMenuItem>
+                                <DropdownMenuItem>Edit Customer</DropdownMenuItem>
+                                <DropdownMenuItem>Send Message</DropdownMenuItem>
+                                <DropdownMenuItem>View Orders</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
 
           {/* Pagination */}

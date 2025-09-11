@@ -9,7 +9,7 @@ const links = [
   { href: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
   { href: "/admin/orders", label: "Orders", icon: Package },
   { href: "/admin/add-product", label: "Add Product", icon: Package },
-  { href: "/admin/customer", label: "Customers", icon: Users },
+  { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: LineChart },
   { href: "/admin/admins", label: "Admins", icon: Shield },
 ]
