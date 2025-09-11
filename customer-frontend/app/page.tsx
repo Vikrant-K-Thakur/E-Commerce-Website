@@ -2,10 +2,12 @@
 
 import { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
-import { Search } from "lucide-react"
+import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
 import { SearchBar } from "@/components/search-bar"
 import { CategoryGrid } from "@/components/category-grid"
 import { FeaturedProducts } from "@/components/featured-products"
@@ -19,6 +21,7 @@ export default function HomePage() {
   const [products, setProducts] = useState<any[]>([])
   const [filteredProducts, setFilteredProducts] = useState<any[]>([])
   const [showSearchResults, setShowSearchResults] = useState(false)
+  const [sortBy, setSortBy] = useState("name")
   const { addToCart } = useCart()
 
   useEffect(() => {
@@ -27,17 +30,30 @@ export default function HomePage() {
 
   useEffect(() => {
     if (searchQuery.trim()) {
-      const filtered = products.filter(product =>
+      let filtered = products.filter(product =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
+      
+      // Apply sorting
+      filtered = filtered.sort((a, b) => {
+        if (sortBy === "name") return a.name.localeCompare(b.name)
+        if (sortBy === "price-low") return a.price - b.price
+        if (sortBy === "price-high") return b.price - a.price
+        return 0
+      })
+      
       setFilteredProducts(filtered)
       setShowSearchResults(true)
     } else {
       setShowSearchResults(false)
       setFilteredProducts([])
     }
-  }, [searchQuery, products])
+  }, [searchQuery, products, sortBy])
+
+  const clearSort = () => {
+    setSortBy("name")
+  }
 
   const fetchProducts = async () => {
     const data = await getProducts()
@@ -63,17 +79,62 @@ export default function HomePage() {
       {/* Desktop Search Bar - Only visible on laptop/desktop */}
       <div className="hidden lg:block sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="px-8 py-4">
-          <div className="max-w-2xl mx-auto relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for products..."
-              className="pl-12 pr-4 h-12 text-base bg-muted/50 border-0 focus-visible:ring-2"
-            />
+          <div className="max-w-4xl mx-auto flex gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search for products..."
+                className="pl-12 pr-4 h-12 text-base bg-muted/50 border-0 focus-visible:ring-2"
+              />
+            </div>
+            
+            {/* Desktop Sort */}
+            <div className="flex gap-2">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-48 h-12">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name A-Z</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>
+      
+      {/* Mobile Sort - Only show when searching */}
+      {showSearchResults && (
+        <div className="lg:hidden sticky top-16 z-30 bg-background/95 backdrop-blur border-b p-4">
+          <div className="flex gap-2">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name A-Z</SelectItem>
+                <SelectItem value="price-low">Price: Low to High</SelectItem>
+                <SelectItem value="price-high">Price: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => {
+                setSearchQuery("")
+                clearSort()
+              }}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="pb-20 lg:pb-8">
@@ -84,9 +145,21 @@ export default function HomePage() {
               <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground mb-2">
                 Search Results
               </h2>
-              <p className="text-sm text-muted-foreground">
-                {filteredProducts.length} products found for "{searchQuery}"
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {filteredProducts.length} products found for "{searchQuery}"
+                </p>
+{sortBy !== "name" && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={clearSort}
+                    className="text-xs"
+                  >
+                    Clear Sort
+                  </Button>
+                )}
+              </div>
             </div>
             
             {filteredProducts.length > 0 ? (

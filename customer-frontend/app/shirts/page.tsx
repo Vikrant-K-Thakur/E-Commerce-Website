@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Filter, Grid, List } from "lucide-react"
+import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -98,9 +98,7 @@ export default function ViewAllProductsPage() {
                 </SelectContent>
               </Select>
               
-              <Button variant="outline" size="icon" className="h-10 lg:h-12 w-10 lg:w-12">
-                <Filter className="w-4 h-4 lg:w-5 lg:h-5" />
-              </Button>
+
             </div>
           </div>
 

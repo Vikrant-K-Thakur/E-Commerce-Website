@@ -15,6 +15,7 @@ interface CartItem {
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'quantity'>) => void
+  addToCart: (item: Omit<CartItem, 'quantity'>) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
@@ -37,40 +38,67 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user?.email])
 
-  // Save cart to database whenever items change
+  // Save cart to database whenever items change (but not on initial load)
   useEffect(() => {
-    if (user?.email && items.length >= 0) {
+    if (user?.email && items.length > 0) {
       saveCartToDB()
     }
   }, [items, user?.email])
 
   const loadCartFromDB = async () => {
     if (!user?.email) return
-    const cartItems = await getCart(user.email)
-    setItems(cartItems)
+    try {
+      const cartItems = await getCart(user.email)
+      setItems(cartItems || [])
+    } catch (error) {
+      console.error('Failed to load cart:', error)
+      setItems([])
+    }
   }
 
   const saveCartToDB = async () => {
     if (!user?.email) return
-    await saveCart(user.email, items)
+    try {
+      await saveCart(user.email, items)
+    } catch (error) {
+      console.error('Failed to save cart:', error)
+    }
   }
 
   const addItem = (newItem: Omit<CartItem, 'quantity'>) => {
     setItems(prev => {
       const existing = prev.find(item => item.id === newItem.id)
+      let updatedItems
       if (existing) {
-        return prev.map(item =>
+        updatedItems = prev.map(item =>
           item.id === newItem.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
+      } else {
+        updatedItems = [...prev, { ...newItem, quantity: 1 }]
       }
-      return [...prev, { ...newItem, quantity: 1 }]
+      
+      // Immediately save to database
+      if (user?.email) {
+        saveCart(user.email, updatedItems).catch(console.error)
+      }
+      
+      return updatedItems
     })
   }
 
   const removeItem = (id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id))
+    setItems(prev => {
+      const updatedItems = prev.filter(item => item.id !== id)
+      
+      // Immediately save to database
+      if (user?.email) {
+        saveCart(user.email, updatedItems).catch(console.error)
+      }
+      
+      return updatedItems
+    })
   }
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -78,15 +106,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       removeItem(id)
       return
     }
-    setItems(prev =>
-      prev.map(item =>
+    setItems(prev => {
+      const updatedItems = prev.map(item =>
         item.id === id ? { ...item, quantity } : item
       )
-    )
+      
+      // Immediately save to database
+      if (user?.email) {
+        saveCart(user.email, updatedItems).catch(console.error)
+      }
+      
+      return updatedItems
+    })
   }
 
   const clearCart = () => {
     setItems([])
+    
+    // Immediately save to database
+    if (user?.email) {
+      saveCart(user.email, []).catch(console.error)
+    }
   }
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
@@ -96,6 +136,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     <CartContext.Provider value={{
       items,
       addItem,
+      addToCart: addItem,
       removeItem,
       updateQuantity,
       clearCart,
