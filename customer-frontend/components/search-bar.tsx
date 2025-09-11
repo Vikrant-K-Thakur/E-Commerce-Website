@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, SlidersHorizontal, Bell, Star } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,29 @@ import { useAuth } from "@/contexts/auth-context"
 
 export function SearchBar() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [rewardCount, setRewardCount] = useState(0)
   const { user } = useAuth()
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchRewardCount()
+    }
+  }, [user?.email])
+
+  const fetchRewardCount = async () => {
+    if (!user?.email) return
+    
+    try {
+      const response = await fetch(`/api/rewards?email=${user.email}`)
+      const result = await response.json()
+      if (result.success) {
+        const unreadCount = result.data.filter((reward: any) => !reward.isRead).length
+        setRewardCount(unreadCount)
+      }
+    } catch (error) {
+      console.error('Failed to fetch reward count:', error)
+    }
+  }
 
   return (
     <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4">
@@ -37,8 +59,13 @@ export function SearchBar() {
 
       <AuthGuard>
         <Link href="/rewards">
-          <Button variant="ghost" size="icon" className="shrink-0 sm:hidden">
+          <Button variant="ghost" size="icon" className="shrink-0 sm:hidden relative">
             <Star className="w-4 h-4" />
+            {rewardCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {rewardCount > 9 ? '9+' : rewardCount}
+              </span>
+            )}
           </Button>
         </Link>
       </AuthGuard>

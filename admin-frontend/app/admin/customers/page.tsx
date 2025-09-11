@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Users,
   UserCheck,
@@ -20,6 +24,7 @@ import {
   TrendingDown,
   MoreHorizontal,
   Loader2,
+  Gift,
 } from "lucide-react"
 
 interface Customer {
@@ -40,6 +45,13 @@ export default function CustomerManagement() {
   const [currentPage, setCurrentPage] = useState(1)
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
+  const [showRewardDialog, setShowRewardDialog] = useState(false)
+  const [rewardType, setRewardType] = useState("discount")
+  const [rewardValue, setRewardValue] = useState("")
+  const [rewardTitle, setRewardTitle] = useState("")
+  const [rewardDescription, setRewardDescription] = useState("")
+  const [selectedCustomer, setSelectedCustomer] = useState("")
+  const [sendingReward, setSendingReward] = useState(false)
   const itemsPerPage = 5
 
   useEffect(() => {
@@ -80,6 +92,50 @@ export default function CustomerManagement() {
   const handleSendDiscount = (customerId: string) => {
     // TODO: Implement discount sending logic
     console.log(`Sending discount to customer ${customerId}`)
+  }
+
+  const sendReward = async () => {
+    if (!rewardValue || !rewardTitle || !rewardDescription || !selectedCustomer) {
+      alert('Please fill in all fields')
+      return
+    }
+    
+    setSendingReward(true)
+    
+    try {
+      const response = await fetch('/api/rewards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sendReward',
+          type: rewardType,
+          value: parseFloat(rewardValue),
+          title: rewardTitle,
+          description: rewardDescription,
+          customerEmail: selectedCustomer,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        alert(result.message || 'Reward sent successfully!')
+        setShowRewardDialog(false)
+        setRewardValue("")
+        setRewardTitle("")
+        setRewardDescription("")
+        setSelectedCustomer("")
+        setRewardType("discount")
+      } else {
+        alert('Error: ' + (result.error || 'Failed to send reward'))
+      }
+    } catch (error) {
+      console.error('Failed to send reward:', error)
+      alert('Network error: Failed to send reward')
+    } finally {
+      setSendingReward(false)
+    }
   }
 
   return (
@@ -179,10 +235,104 @@ export default function CustomerManagement() {
               <CardTitle>Customer List</CardTitle>
               <CardDescription>Search customers by name, email, or phone number.</CardDescription>
             </div>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Customer
-            </Button>
+            <div className="flex gap-2">
+              <Dialog open={showRewardDialog} onOpenChange={setShowRewardDialog}>
+                <DialogTrigger asChild>
+                  <Button className="bg-purple-600 hover:bg-purple-700">
+                    <Gift className="w-4 h-4 mr-2" />
+                    Send Rewards
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Send Reward to Customers</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Customer</Label>
+                      <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select customer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Customers</SelectItem>
+                          {customers.map((customer) => (
+                            <SelectItem key={customer.id} value={customer.email}>
+                              {customer.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label>Reward Type</Label>
+                      <Select value={rewardType} onValueChange={setRewardType}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="discount">Discount (%)</SelectItem>
+                          <SelectItem value="coins">Gift Coins</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label>Value</Label>
+                      <Input
+                        type="number"
+                        value={rewardValue}
+                        onChange={(e) => setRewardValue(e.target.value)}
+                        placeholder={rewardType === 'discount' ? 'Enter percentage' : 'Enter coins amount'}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Title</Label>
+                      <Input
+                        value={rewardTitle}
+                        onChange={(e) => setRewardTitle(e.target.value)}
+                        placeholder="Reward title"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        value={rewardDescription}
+                        onChange={(e) => setRewardDescription(e.target.value)}
+                        placeholder="Reward description"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <Button 
+                      onClick={sendReward} 
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                      disabled={!rewardValue || !rewardTitle || !rewardDescription || !selectedCustomer || sendingReward}
+                    >
+                      {sendingReward ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Gift className="w-4 h-4 mr-2" />
+                          Send Reward
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Customer
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
