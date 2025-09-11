@@ -8,62 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const notifications = [
-  {
-    id: 1,
-    type: "sale",
-    title: "Flash Sale Alert!",
-    message: "Get 50% off on all categories. Limited time offer!",
-    time: "2 hours ago",
-    read: false,
-    icon: Percent,
-  },
-  {
-    id: 2,
-    type: "order",
-    title: "Order #12345 Shipped!",
-    message: "Your order has been dispatched and is on its way to you.",
-    time: "1 day ago",
-    read: false,
-    icon: Package,
-  },
-  {
-    id: 3,
-    type: "loyalty",
-    title: "Exclusive Loyalty Bonus",
-    message: "As a valued customer, earn 500 bonus coins on your next purchase.",
-    time: "2 days ago",
-    read: true,
-    icon: Gift,
-  },
-  {
-    id: 4,
-    type: "referral",
-    title: "Friend Joined Successfully!",
-    message: "Your friend Sarah joined using your referral code. You both earned 500 coins!",
-    time: "3 days ago",
-    read: true,
-    icon: Users,
-  },
-  {
-    id: 5,
-    type: "order",
-    title: "Order #12344 Delivered",
-    message: "Your order was successfully delivered. How was your experience?",
-    time: "1 week ago",
-    read: true,
-    icon: Package,
-  },
-  {
-    id: 6,
-    type: "sale",
-    title: "New Feature Unlocked!",
-    message: "Discover the latest updates to our app and new features available.",
-    time: "1 week ago",
-    read: true,
-    icon: Bell,
-  },
-]
+const notifications: any[] = []
 
 export default function NotificationsPage() {
   const [notificationList, setNotificationList] = useState(notifications)
@@ -85,7 +30,6 @@ export default function NotificationsPage() {
 
   const filteredNotifications = notificationList.filter((notif) => {
     if (activeTab === "new") return !notif.read
-    if (activeTab === "earlier") return notif.read
     return true
   })
 
@@ -125,7 +69,7 @@ export default function NotificationsPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="new" className="relative">
               New Notifications
               {unreadCount > 0 && (
@@ -134,8 +78,7 @@ export default function NotificationsPage() {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="earlier">Earlier Today</TabsTrigger>
-            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="all">All Notifications</TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="space-y-3 mt-4">
