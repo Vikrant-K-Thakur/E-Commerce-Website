@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import {
   ShoppingCart,
   Package,
@@ -22,95 +24,119 @@ import {
   TrendingDown,
   Calendar,
   FileText,
+  Download,
+  Loader2,
 } from "lucide-react"
 
-const orderData = [
-  {
-    id: "#ORD001",
-    customer: "Alice Smith",
-    orderDate: "2024-07-20",
-    total: 890.0,
-    status: "Delivered",
-    trackingId: "TRK780123",
-  },
-  {
-    id: "#ORD002",
-    customer: "Bob Johnson",
-    orderDate: "2024-07-18",
-    total: 270.5,
-    status: "Shipped",
-    trackingId: "TRK443320",
-  },
-  {
-    id: "#ORD003",
-    customer: "Charlie Brown",
-    orderDate: "2024-07-15",
-    total: 156.25,
-    status: "Pending",
-    trackingId: null,
-  },
-  {
-    id: "#ORD004",
-    customer: "Diana Miller",
-    orderDate: "2024-07-17",
-    total: 520.0,
-    status: "Processing",
-    trackingId: null,
-  },
-  {
-    id: "#ORD005",
-    customer: "Eve Davis",
-    orderDate: "2024-07-16",
-    total: 85.0,
-    status: "Refunded",
-    trackingId: null,
-  },
-  {
-    id: "#ORD006",
-    customer: "Frank White",
-    orderDate: "2024-07-15",
-    total: 199.99,
-    status: "Delivered",
-    trackingId: "TRK320987",
-  },
-  {
-    id: "#ORD007",
-    customer: "Grace Black",
-    orderDate: "2024-07-14",
-    total: 92.75,
-    status: "Cancelled",
-    trackingId: null,
-  },
-  {
-    id: "#ORD008",
-    customer: "Henry Green",
-    orderDate: "2024-07-13",
-    total: 450.0,
-    status: "Processing",
-    trackingId: null,
-  },
-]
+interface Order {
+  id: string
+  customer: string
+  customerEmail: string
+  orderDate: string
+  total: number
+  status: string
+  trackingId: string | null
+  items: any[]
+  address: string
+}
 
-const trackingData = [
-  { id: "TRK780123", status: "Delivered on 2024-07-21", order: "#ORD001" },
-  { id: "TRK443320", status: "In transit - Expected 2024-07-22", order: "#ORD002" },
-  { id: "TRK320987", status: "Delivered on 2024-07-19", order: "#ORD006" },
-]
 
-const refundData = [
-  { orderId: "#ORD005", customer: "Eve Davis", status: "Completed", amount: 85.0 },
-  { orderId: "#ORD018", customer: "John Doe", status: "Pending", amount: 125.5 },
-  { orderId: "#ORD007", customer: "Grace Black", status: "Completed", amount: 92.75 },
-]
 
 export default function OrderManagement() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [invoiceOrderId, setInvoiceOrderId] = useState("")
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [statusUpdateOrder, setStatusUpdateOrder] = useState<Order | null>(null)
+  const [newStatus, setNewStatus] = useState("")
+  const [trackingId, setTrackingId] = useState("")
   const itemsPerPage = 8
 
-  const filteredOrders = orderData.filter((order) => {
+  useEffect(() => {
+    fetchOrders()
+  }, [])
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/orders')
+      const result = await response.json()
+      if (result.success) {
+        setOrders(result.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateOrderStatus = async () => {
+    if (!statusUpdateOrder || !newStatus) return
+    
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateStatus',
+          orderId: statusUpdateOrder.id,
+          status: newStatus,
+          trackingId: trackingId || null
+        })
+      })
+      
+      if (response.ok) {
+        fetchOrders()
+        setStatusUpdateOrder(null)
+        setNewStatus("")
+        setTrackingId("")
+      }
+    } catch (error) {
+      console.error('Failed to update order status:', error)
+    }
+  }
+
+  const downloadReceipt = (period: string) => {
+    const now = new Date()
+    let filteredOrders = orders
+    
+    if (period === 'week') {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      filteredOrders = orders.filter(order => new Date(order.orderDate) >= weekAgo)
+    } else if (period === 'month') {
+      const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+      filteredOrders = orders.filter(order => new Date(order.orderDate) >= monthAgo)
+    } else if (period === 'year') {
+      const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+      filteredOrders = orders.filter(order => new Date(order.orderDate) >= yearAgo)
+    }
+    
+    const csvContent = [
+      ['Order ID', 'Customer', 'Email', 'Date', 'Total', 'Status'].join(','),
+      ...filteredOrders.map(order => [
+        order.id,
+        order.customer,
+        order.customerEmail,
+        order.orderDate,
+        order.total,
+        order.status
+      ].join(','))
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `orders-${period}-${now.toISOString().split('T')[0]}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer.toLowerCase().includes(searchTerm.toLowerCase())
@@ -141,12 +167,7 @@ export default function OrderManagement() {
     )
   }
 
-  const generateInvoice = () => {
-    if (invoiceOrderId) {
-      console.log(`Generating invoice for ${invoiceOrderId}`)
-      // TODO: Implement invoice generation
-    }
-  }
+
 
   return (
     <div className="p-6 space-y-6">
@@ -156,10 +177,21 @@ export default function OrderManagement() {
           <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
           <p className="text-gray-600 mt-1">Track orders, manage deliveries, and handle refunds efficiently.</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Create New Order
-        </Button>
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-green-600 hover:bg-green-700">
+                <Download className="w-4 h-4 mr-2" />
+                Download Reports
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => downloadReceipt('week')}>This Week</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => downloadReceipt('month')}>This Month</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => downloadReceipt('year')}>This Year</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Order Statistics */}
@@ -169,7 +201,7 @@ export default function OrderManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                <p className="text-3xl font-bold text-gray-900">1,245</p>
+                <p className="text-3xl font-bold text-gray-900">{orders.length}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-600">+15% since last month</span>
@@ -187,7 +219,7 @@ export default function OrderManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending Shipments</p>
-                <p className="text-3xl font-bold text-gray-900">78</p>
+                <p className="text-3xl font-bold text-gray-900">{orders.filter(o => o.status === 'Pending' || o.status === 'Processing').length}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingDown className="w-4 h-4 text-red-600" />
                   <span className="text-sm text-red-600">-5% since last week</span>
@@ -205,7 +237,7 @@ export default function OrderManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Refund Requests</p>
-                <p className="text-3xl font-bold text-gray-900">12</p>
+                <p className="text-3xl font-bold text-gray-900">{orders.filter(o => o.status === 'Refunded').length}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-red-600" />
                   <span className="text-sm text-red-600">+3% since last month</span>
@@ -223,7 +255,7 @@ export default function OrderManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Completed Deliveries</p>
-                <p className="text-3xl font-bold text-gray-900">987</p>
+                <p className="text-3xl font-bold text-gray-900">{orders.filter(o => o.status === 'Delivered').length}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-600">+10% yesterday</span>
@@ -281,71 +313,161 @@ export default function OrderManagement() {
 
           {/* Orders Table */}
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER ID</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">CUSTOMER</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER DATE</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">TOTAL</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">STATUS</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedOrders.map((order) => (
-                  <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-4 px-4">
-                      <span className="font-medium text-gray-900">{order.id}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="text-gray-900">{order.customer}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="text-gray-600">{order.orderDate}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="font-medium text-gray-900">${order.total.toFixed(2)}</span>
-                    </td>
-                    <td className="py-4 px-4">{getStatusBadge(order.status)}</td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-700">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
-                            <DropdownMenuItem>Update Status</DropdownMenuItem>
-                            <DropdownMenuItem>Generate Invoice</DropdownMenuItem>
-                            <DropdownMenuItem>Track Package</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </td>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <span className="ml-2 text-gray-600">Loading orders...</span>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER ID</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">CUSTOMER</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">EMAIL</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER DATE</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">TOTAL</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">STATUS</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ACTIONS</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginatedOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-gray-500">
+                        No orders found
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedOrders.map((order) => (
+                      <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-4 px-4">
+                          <span className="font-medium text-gray-900">{order.id}</span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="text-gray-900">{order.customer}</span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="text-gray-600">{order.customerEmail}</span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="text-gray-600">{order.orderDate}</span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="font-medium text-gray-900">${order.total.toFixed(2)}</span>
+                        </td>
+                        <td className="py-4 px-4">{getStatusBadge(order.status)}</td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  onClick={() => setSelectedOrder(order)}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Order Details - {selectedOrder?.id}</DialogTitle>
+                                </DialogHeader>
+                                {selectedOrder && (
+                                  <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <Label>Customer</Label>
+                                        <p className="font-medium">{selectedOrder.customer}</p>
+                                      </div>
+                                      <div>
+                                        <Label>Email</Label>
+                                        <p>{selectedOrder.customerEmail}</p>
+                                      </div>
+                                      <div>
+                                        <Label>Order Date</Label>
+                                        <p>{selectedOrder.orderDate}</p>
+                                      </div>
+                                      <div>
+                                        <Label>Total</Label>
+                                        <p className="font-medium">${selectedOrder.total.toFixed(2)}</p>
+                                      </div>
+                                      <div>
+                                        <Label>Status</Label>
+                                        <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
+                                      </div>
+                                      <div>
+                                        <Label>Tracking ID</Label>
+                                        <p>{selectedOrder.trackingId || 'Not assigned'}</p>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <Label>Address</Label>
+                                      <p>{selectedOrder.address || 'No address provided'}</p>
+                                    </div>
+                                  </div>
+                                )}
+                              </DialogContent>
+                            </Dialog>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  onClick={() => {
+                                    setStatusUpdateOrder(order)
+                                    setNewStatus(order.status)
+                                    setTrackingId(order.trackingId || '')
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Update Order Status - {statusUpdateOrder?.id}</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label>Status</Label>
+                                    <Select value={newStatus} onValueChange={setNewStatus}>
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Pending">Pending</SelectItem>
+                                        <SelectItem value="Processing">Processing</SelectItem>
+                                        <SelectItem value="Shipped">Shipped</SelectItem>
+                                        <SelectItem value="Delivered">Delivered</SelectItem>
+                                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                        <SelectItem value="Refunded">Refunded</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div>
+                                    <Label>Tracking ID (Optional)</Label>
+                                    <Input
+                                      value={trackingId}
+                                      onChange={(e) => setTrackingId(e.target.value)}
+                                      placeholder="Enter tracking ID"
+                                    />
+                                  </div>
+                                  <Button onClick={updateOrderStatus} className="w-full">
+                                    Update Status
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
 
           {/* Pagination */}
@@ -394,23 +516,24 @@ export default function OrderManagement() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="w-5 h-5" />
-              Delivery Tracking
+              Shipped Orders
             </CardTitle>
-            <CardDescription>View All</CardDescription>
+            <CardDescription>Track Deliveries</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {trackingData.map((tracking, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {orders.filter(o => o.status === 'Shipped' && o.trackingId).slice(0, 3).map((order) => (
+                <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">{tracking.id}</p>
-                    <p className="text-sm text-gray-600">{tracking.status}</p>
+                    <p className="font-medium text-gray-900">{order.trackingId}</p>
+                    <p className="text-sm text-gray-600">{order.customer} - {order.id}</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-blue-600">
-                    <Eye className="w-4 h-4" />
-                  </Button>
+                  <Badge className="bg-blue-100 text-blue-800">In Transit</Badge>
                 </div>
               ))}
+              {orders.filter(o => o.status === 'Shipped' && o.trackingId).length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">No shipped orders with tracking</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -420,62 +543,55 @@ export default function OrderManagement() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <RefreshCw className="w-5 h-5" />
-              Refund & Returns
+              Refunded Orders
             </CardTitle>
-            <CardDescription>Manage All</CardDescription>
+            <CardDescription>Manage Returns</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {refundData.map((refund, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {orders.filter(o => o.status === 'Refunded').slice(0, 3).map((order) => (
+                <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">{refund.orderId}</p>
+                    <p className="font-medium text-gray-900">{order.id}</p>
                     <p className="text-sm text-gray-600">
-                      {refund.customer} - ${refund.amount}
+                      {order.customer} - ${order.total.toFixed(2)}
                     </p>
                   </div>
-                  <Badge
-                    variant={refund.status === "Completed" ? "default" : "secondary"}
-                    className={
-                      refund.status === "Completed" ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"
-                    }
-                  >
-                    {refund.status}
-                  </Badge>
+                  <Badge className="bg-purple-100 text-purple-800">Refunded</Badge>
                 </div>
               ))}
+              {orders.filter(o => o.status === 'Refunded').length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">No refunded orders</p>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Invoice Generation */}
+        {/* Recent Orders */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Invoice Generation
+              <ShoppingCart className="w-5 h-5" />
+              Recent Orders
             </CardTitle>
-            <CardDescription>View History</CardDescription>
+            <CardDescription>Latest Activity</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Enter Order ID</label>
-                <Input
-                  placeholder="e.g., #ORD001"
-                  value={invoiceOrderId}
-                  onChange={(e) => setInvoiceOrderId(e.target.value)}
-                />
-              </div>
-              <Button
-                onClick={generateInvoice}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={!invoiceOrderId}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Generate
-              </Button>
-              <p className="text-xs text-gray-500">Quickly generate invoices for specific orders.</p>
+              {orders.slice(0, 3).map((order) => (
+                <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{order.id}</p>
+                    <p className="text-sm text-gray-600">
+                      {order.customer} - ${order.total.toFixed(2)}
+                    </p>
+                  </div>
+                  {getStatusBadge(order.status)}
+                </div>
+              ))}
+              {orders.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">No orders yet</p>
+              )}
             </div>
           </CardContent>
         </Card>
