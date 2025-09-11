@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Gift, Users, ShoppingBag, Calendar, FileText, Copy, Share, Bell } from "lucide-react"
+import { ArrowLeft, Gift, Ticket, Bell, CheckCircle, AlertCircle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,93 +11,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { BottomNavigation } from "@/components/bottom-navigation"
 
-const loyaltyData = {
-  currentCoins: 2350,
-  coinValue: 23.5, // $23.50 equivalent
-  totalEarned: 5420,
-  totalRedeemed: 3070,
-}
-
-const earningOpportunities = [
-  {
-    id: "shop",
-    title: "Shop & Earn",
-    description: "Get 1 coin for every $1 spent in store",
-    icon: ShoppingBag,
-    action: "Shop Now",
-    coins: "1 coin per $1",
-  },
-  {
-    id: "refer",
-    title: "Refer a Friend",
-    description: "Invite friends to join and earn 500 coins to share",
-    icon: Users,
-    action: "Invite Now",
-    coins: "500 coins",
-  },
-  {
-    id: "survey",
-    title: "Complete Surveys",
-    description: "Share your valuable feedback in surveys",
-    icon: FileText,
-    action: "Take Survey",
-    coins: "50-200 coins",
-  },
-  {
-    id: "birthday",
-    title: "Birthday Bonus",
-    description: "Enjoy a special gift of 200 coins to celebrate",
-    icon: Calendar,
-    action: "Claim Gift",
-    coins: "200 coins",
-  },
-]
-
-const recentTransactions = [
-  {
-    id: 1,
-    type: "earned",
-    description: "Purchase reward - Order #R001234",
-    coins: 85,
-    date: "2023-11-20",
-    time: "14:30",
-  },
-  {
-    id: 2,
-    type: "redeemed",
-    description: "Redeemed for discount",
-    coins: -100,
-    date: "2023-11-19",
-    time: "10:15",
-  },
-  {
-    id: 3,
-    type: "earned",
-    description: "Referral bonus - Friend joined",
-    coins: 500,
-    date: "2023-11-18",
-    time: "16:45",
-  },
-  {
-    id: 4,
-    type: "earned",
-    description: "Survey completion",
-    coins: 150,
-    date: "2023-11-17",
-    time: "09:22",
-  },
-]
-
 export default function RewardsPage() {
-  const [referralCode] = useState("MARIA2024")
+  const [couponCode, setCouponCode] = useState("")
+  const [isRedeeming, setIsRedeeming] = useState(false)
   const { toast } = useToast()
 
-  const copyReferralCode = () => {
-    navigator.clipboard.writeText(referralCode)
-    toast({
-      title: "Copied!",
-      description: "Referral code copied to clipboard",
-    })
+  const handleRedeemCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a coupon code",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsRedeeming(true)
+    // TODO: API call to redeem coupon will be added later
+    setTimeout(() => {
+      setIsRedeeming(false)
+      toast({
+        title: "Coupon Redeemed!",
+        description: "Your coupon has been successfully applied",
+      })
+      setCouponCode("")
+    }, 2000)
   }
 
   return (
@@ -110,7 +48,7 @@ export default function RewardsPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <h1 className="text-lg font-semibold">Loyalty Rewards</h1>
+          <h1 className="text-lg font-semibold">Rewards & Coupons</h1>
           <Button variant="ghost" size="icon">
             <Bell className="w-5 h-5" />
           </Button>
@@ -118,189 +56,190 @@ export default function RewardsPage() {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* Current Coins Balance */}
-        <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-0">
-          <CardContent className="p-6 text-center space-y-4">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
-                <Gift className="w-8 h-8 text-primary" />
-              </div>
-            </div>
+        <Tabs defaultValue="coupons" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="coupons">Redeem Coupons</TabsTrigger>
+            <TabsTrigger value="notifications">Reward Notifications</TabsTrigger>
+          </TabsList>
 
-            <div className="space-y-2">
-              <h2 className="text-4xl font-bold text-primary">{loyaltyData.currentCoins}</h2>
-              <p className="text-sm text-muted-foreground">Current Coins (${loyaltyData.coinValue})</p>
-            </div>
+          {/* Coupon Redemption Tab */}
+          <TabsContent value="coupons" className="space-y-6 mt-6">
+            {/* Coupon Redemption Card */}
+            <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-0">
+              <CardContent className="p-6">
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+                    <Ticket className="w-8 h-8 text-primary" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-bold text-foreground">Redeem Coupon Code</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Enter your coupon code below to redeem special offers and discounts
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-3 max-w-sm mx-auto">
+                    <Input
+                      placeholder="Enter coupon code"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      className="text-center font-mono text-lg"
+                    />
+                    
+                    <Button 
+                      onClick={handleRedeemCoupon}
+                      disabled={isRedeeming || !couponCode.trim()}
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      {isRedeeming ? (
+                        <>
+                          <Clock className="w-4 h-4 mr-2 animate-spin" />
+                          Redeeming...
+                        </>
+                      ) : (
+                        <>
+                          <Gift className="w-4 h-4 mr-2" />
+                          Redeem Coupon
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="space-y-1">
-                <p className="text-lg font-semibold text-foreground">{loyaltyData.totalEarned}</p>
-                <p className="text-xs text-muted-foreground">Total Earned</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-lg font-semibold text-foreground">{loyaltyData.totalRedeemed}</p>
-                <p className="text-xs text-muted-foreground">Total Redeemed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Redeem Coins */}
-        <Card>
-          <CardContent className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-foreground">Redeem Your Coins</h3>
-              <Button variant="outline" size="sm">
-                <Gift className="w-4 h-4 mr-2" />
-                View Rewards
-              </Button>
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-              Your earned coins are automatically applied as discounts at checkout, or you can choose to save them for
-              larger rewards.
-            </p>
-
-            <Link href="/rewards/redeem">
-              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                Learn more about redemption
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Ways to Earn More Coins */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Ways to Earn More Coins</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {earningOpportunities.map((opportunity) => {
-              const IconComponent = opportunity.icon
-              return (
-                <div key={opportunity.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-secondary/20 rounded-lg">
-                      <IconComponent className="w-5 h-5 text-secondary" />
+            {/* How it Works */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">How Coupon Redemption Works</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-primary">1</span>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-sm">{opportunity.title}</h4>
-                        <Badge variant="secondary" className="text-xs">
-                          {opportunity.coins}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground text-pretty">{opportunity.description}</p>
+                    <div>
+                      <p className="font-medium text-sm">Get Coupon Code</p>
+                      <p className="text-xs text-muted-foreground">Receive coupon codes from admin or promotional campaigns</p>
                     </div>
                   </div>
-
-                  <Button size="sm" variant="outline" className="shrink-0 bg-transparent">
-                    {opportunity.action}
-                  </Button>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-primary">2</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Enter Code</p>
+                      <p className="text-xs text-muted-foreground">Type or paste your coupon code in the field above</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-primary">3</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Enjoy Rewards</p>
+                      <p className="text-xs text-muted-foreground">Your discount or reward will be applied to your account</p>
+                    </div>
+                  </div>
                 </div>
-              )
-            })}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Referral Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Refer Friends & Earn
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Invite friends to join and both of you get 500 coins when they make their first purchase!
-              </p>
-            </div>
+          {/* Reward Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-6 mt-6">
+            {/* Notifications Header */}
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Bell className="w-8 h-8 text-secondary" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground mb-2">Reward Notifications</h2>
+                <p className="text-sm text-muted-foreground">
+                  Stay updated with special rewards and offers from our admin team
+                </p>
+              </CardContent>
+            </Card>
 
+            {/* Sample Notifications - These will be replaced with real data later */}
             <div className="space-y-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Your Referral Code</label>
-                <div className="flex gap-2">
-                  <Input value={referralCode} readOnly className="flex-1" />
-                  <Button variant="outline" size="icon" onClick={copyReferralCode}>
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-sm">Welcome Bonus</p>
+                        <Badge variant="secondary" className="text-xs">New</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Congratulations! You've received a welcome bonus for joining our platform.
+                      </p>
+                      <p className="text-xs text-muted-foreground">2 hours ago</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <Button className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                <Share className="w-4 h-4 mr-2" />
-                Share with Friends
-              </Button>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Gift className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-sm">Special Offer</p>
+                        <Badge variant="outline" className="text-xs">Pending</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        You have a special discount waiting! Check your coupons section.
+                      </p>
+                      <p className="text-xs text-muted-foreground">1 day ago</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <AlertCircle className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-sm">Reward Expiring Soon</p>
+                        <Badge variant="destructive" className="text-xs">Urgent</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Your reward expires in 3 days. Don't forget to use it!
+                      </p>
+                      <p className="text-xs text-muted-foreground">3 days ago</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Transaction History */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="recent" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="recent">Recent</TabsTrigger>
-                <TabsTrigger value="all">All History</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="recent" className="space-y-3 mt-4">
-                {recentTransactions.slice(0, 3).map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <div className="space-y-1">
-                      <p className="font-medium text-sm">{transaction.description}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{transaction.date}</span>
-                        <span>{transaction.time}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className={`font-semibold ${transaction.type === "earned" ? "text-green-600" : "text-red-600"}`}
-                      >
-                        {transaction.type === "earned" ? "+" : ""}
-                        {transaction.coins} coins
-                      </p>
-                    </div>
-                  </div>
-                ))}
-
-                <Link href="/rewards/history">
-                  <Button variant="ghost" className="w-full">
-                    View All Transactions
-                  </Button>
-                </Link>
-              </TabsContent>
-
-              <TabsContent value="all" className="space-y-3 mt-4">
-                {recentTransactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <div className="space-y-1">
-                      <p className="font-medium text-sm">{transaction.description}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{transaction.date}</span>
-                        <span>{transaction.time}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className={`font-semibold ${transaction.type === "earned" ? "text-green-600" : "text-red-600"}`}
-                      >
-                        {transaction.type === "earned" ? "+" : ""}
-                        {transaction.coins} coins
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+            {/* Empty State Message */}
+            <Card className="border-dashed">
+              <CardContent className="p-8 text-center">
+                <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <h3 className="font-medium text-foreground mb-2">No New Notifications</h3>
+                <p className="text-sm text-muted-foreground">
+                  When admin sends you rewards or special offers, they'll appear here.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <BottomNavigation />
