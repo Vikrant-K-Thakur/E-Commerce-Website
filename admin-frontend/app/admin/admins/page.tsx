@@ -15,20 +15,26 @@ export default function AdminsPage() {
   const [newUser, setNewUser] = useState<AdminUser>({ username: "", password: "" })
   const [error, setError] = useState<string | null>(null)
 
-  function reload() {
-    setRows(listAdmins().map(a => ({ ...a, editing: false, originalUsername: a.username })))
+  async function reload() {
+    try {
+      const admins = await listAdmins()
+      setRows(admins.map(a => ({ ...a, editing: false, originalUsername: a.username })))
+    } catch (error) {
+      console.error('Failed to load admins:', error)
+      setError('Failed to load admins')
+    }
   }
 
   useEffect(() => { reload() }, [])
 
-  function handleAdd() {
+  async function handleAdd() {
     setError(null)
     try {
       if (!newUser.username.trim() || !newUser.password) {
         setError("Username and password are required")
         return
       }
-      addAdmin({ username: newUser.username.trim(), password: newUser.password })
+      await addAdmin({ username: newUser.username.trim(), password: newUser.password })
       setNewUser({ username: "", password: "" })
       reload()
     } catch (e: any) {
@@ -44,29 +50,35 @@ export default function AdminsPage() {
     setRows(prev => prev.map((r, i) => (i === idx ? { ...r, editing: false, username: r.originalUsername!, password: r.password } : r)))
   }
 
-  function handleSave(idx: number) {
+  async function handleSave(idx: number) {
     setError(null)
-    setRows(prev => {
-      const r = prev[idx]
-      try {
-        if (!r.username.trim() || !r.password) throw new Error("Username and password are required")
-        updateAdmin(r.originalUsername!, { username: r.username.trim(), password: r.password })
+    const r = rows[idx]
+    try {
+      if (!r.username.trim() || !r.password) {
+        setError("Username and password are required")
+        return
+      }
+      await updateAdmin(r.originalUsername!, { username: r.username.trim(), password: r.password })
+      setRows(prev => {
         const updated = [...prev]
         updated[idx] = { ...r, editing: false, originalUsername: r.username.trim() }
         return updated
-      } catch (e: any) {
-        setError(e?.message || "Failed to save")
-        return prev
-      }
-    })
+      })
+    } catch (e: any) {
+      setError(e?.message || "Failed to save")
+    }
   }
 
-  function handleDelete(username: string) {
+  async function handleDelete(username: string) {
     setError(null)
     const confirmed = window.confirm(`Delete admin "${username}"?`)
     if (!confirmed) return
-    deleteAdmin(username)
-    reload()
+    try {
+      await deleteAdmin(username)
+      reload()
+    } catch (e: any) {
+      setError(e?.message || "Failed to delete admin")
+    }
   }
 
   return (
@@ -100,7 +112,7 @@ export default function AdminsPage() {
               <Plus className="w-4 h-4 mr-2" /> Add Admin
             </Button>
           </div>
-          <p className="text-xs text-gray-500">Tip: default admin is <Badge variant="secondary">admin123 / admin123</Badge></p>
+          <p className="text-xs text-gray-500">Tip: default admin is <Badge variant="secondary">admin / admin123</Badge></p>
         </CardContent>
       </Card>
 

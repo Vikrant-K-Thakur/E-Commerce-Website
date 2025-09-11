@@ -1,75 +1,67 @@
-// auth.js
 "use client"
 
 export type AdminUser = { username: string; password: string }
 
-const ADMINS_KEY = "admins"
-
-function readAdmins(): AdminUser[] {
-  if (typeof window === "undefined") return []
-
-  const raw = localStorage.getItem(ADMINS_KEY)
-  if (!raw) {
-    // ✅ default user is admin / admin123
-    const seed: AdminUser[] = [{ username: "admin", password: "admin123" }]
-    localStorage.setItem(ADMINS_KEY, JSON.stringify(seed))
-    return seed
-  }
-
+export async function listAdmins(): Promise<AdminUser[]> {
   try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed
-    const seed: AdminUser[] = [{ username: "admin", password: "admin123" }]
-    localStorage.setItem(ADMINS_KEY, JSON.stringify(seed))
-    return seed
-  } catch {
-    const seed: AdminUser[] = [{ username: "admin", password: "admin123" }]
-    localStorage.setItem(ADMINS_KEY, JSON.stringify(seed))
-    return seed
+    const response = await fetch('/api/admins')
+    const result = await response.json()
+    return result.success ? result.data : []
+  } catch (error) {
+    console.error('Failed to fetch admins:', error)
+    return []
   }
 }
 
-function writeAdmins(admins: AdminUser[]) {
-  localStorage.setItem(ADMINS_KEY, JSON.stringify(admins))
-}
-
-export function listAdmins(): AdminUser[] {
-  return readAdmins()
-}
-
-export function addAdmin(user: AdminUser) {
-  const admins = readAdmins()
-  if (admins.some(a => a.username === user.username)) {
-    throw new Error("Username already exists")
+export async function addAdmin(user: AdminUser): Promise<void> {
+  const response = await fetch('/api/admins', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'add', ...user })
+  })
+  const result = await response.json()
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to add admin')
   }
-  admins.push(user)
-  writeAdmins(admins)
 }
 
-export function updateAdmin(oldUsername: string, updated: AdminUser) {
-  const admins = readAdmins()
-  const idx = admins.findIndex(a => a.username === oldUsername)
-  if (idx === -1) throw new Error("Admin not found")
-
-  if (
-    oldUsername !== updated.username &&
-    admins.some(a => a.username === updated.username)
-  ) {
-    throw new Error("Username already exists")
+export async function updateAdmin(oldUsername: string, updated: AdminUser): Promise<void> {
+  const response = await fetch('/api/admins', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'update', oldUsername, ...updated })
+  })
+  const result = await response.json()
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to update admin')
   }
-
-  admins[idx] = updated
-  writeAdmins(admins)
 }
 
-export function deleteAdmin(username: string) {
-  const admins = readAdmins().filter(a => a.username !== username)
-  writeAdmins(admins)
+export async function deleteAdmin(username: string): Promise<void> {
+  const response = await fetch('/api/admins', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'delete', username })
+  })
+  const result = await response.json()
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to delete admin')
+  }
 }
 
-export function validateLogin(username: string, password: string): boolean {
-  const admins = readAdmins()
-  return admins.some(a => a.username === username && a.password === password)
+export async function validateLogin(username: string, password: string): Promise<boolean> {
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    })
+    const result = await response.json()
+    return result.success
+  } catch (error) {
+    console.error('Login validation failed:', error)
+    return false
+  }
 }
 
 export function setAuthCookie() {

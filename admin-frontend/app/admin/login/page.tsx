@@ -18,12 +18,12 @@ export default function AdminLogin() {
   const params = useSearchParams()
   const redirect = params.get("redirect") || "/admin/dashboard"
 
-  function handleLogin() {
+  async function handleLogin() {
     setError(null)
     setIsLoading(true)
 
-    setTimeout(() => {
-      const ok = validateLogin(username.trim(), password)
+    try {
+      const ok = await validateLogin(username.trim(), password)
       if (!ok) {
         setError("Invalid username or password")
         setIsLoading(false)
@@ -31,7 +31,10 @@ export default function AdminLogin() {
       }
       setAuthCookie()
       window.location.href = redirect
-    }, 500)
+    } catch (error) {
+      setError("Login failed. Please try again.")
+      setIsLoading(false)
+    }
   }
 
   useEffect(() => {
