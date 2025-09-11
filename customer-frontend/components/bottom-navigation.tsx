@@ -11,7 +11,7 @@ import { useWishlist } from "@/contexts/wishlist-context"
 
 const navItems = [
   { href: "/", icon: Home, label: "Home", requireAuth: false },
-  { href: "/search", icon: Search, label: "Explore", requireAuth: false },
+  { href: "/shirts", icon: Search, label: "Explore", requireAuth: false },
   { href: "/cart", icon: ShoppingCart, label: "Cart", requireAuth: true },
   { href: "/wishlist", icon: Heart, label: "Wishlist", requireAuth: true },
   { href: "/profile", icon: User, label: "Profile", requireAuth: true },

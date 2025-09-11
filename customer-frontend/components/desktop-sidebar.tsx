@@ -14,8 +14,7 @@ import { useWishlist } from "@/contexts/wishlist-context"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
-  { name: "All Shirts", href: "/shirts", icon: Shirt },
-  { name: "Search", href: "/search", icon: Search },
+  { name: "View All Products", href: "/shirts", icon: Shirt },
 ]
 
 const baseUserNavigation = [
