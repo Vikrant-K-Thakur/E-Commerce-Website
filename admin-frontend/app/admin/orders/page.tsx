@@ -202,10 +202,6 @@ export default function OrderManagement() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Orders</p>
                 <p className="text-3xl font-bold text-gray-900">{orders.length}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+15% since last month</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <ShoppingCart className="w-6 h-6 text-blue-600" />
@@ -220,10 +216,6 @@ export default function OrderManagement() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending Shipments</p>
                 <p className="text-3xl font-bold text-gray-900">{orders.filter(o => o.status === 'Pending' || o.status === 'Processing').length}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingDown className="w-4 h-4 text-red-600" />
-                  <span className="text-sm text-red-600">-5% since last week</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
                 <Package className="w-6 h-6 text-orange-600" />
@@ -238,10 +230,6 @@ export default function OrderManagement() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Refund Requests</p>
                 <p className="text-3xl font-bold text-gray-900">{orders.filter(o => o.status === 'Refunded').length}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-red-600" />
-                  <span className="text-sm text-red-600">+3% since last month</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <RefreshCw className="w-6 h-6 text-red-600" />
@@ -256,10 +244,6 @@ export default function OrderManagement() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Completed Deliveries</p>
                 <p className="text-3xl font-bold text-gray-900">{orders.filter(o => o.status === 'Delivered').length}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+10% yesterday</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
