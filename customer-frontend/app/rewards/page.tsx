@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
+import { BottomNavigation } from "@/components/bottom-navigation"
 
 const loyaltyData = {
   currentCoins: 2350,
@@ -301,6 +302,8 @@ export default function RewardsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <BottomNavigation />
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Search, SlidersHorizontal, Bell, User } from "lucide-react"
+import { Search, SlidersHorizontal, Bell, Star } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -36,6 +36,14 @@ export function SearchBar() {
       </AuthGuard>
 
       <AuthGuard>
+        <Link href="/rewards">
+          <Button variant="ghost" size="icon" className="shrink-0 sm:hidden">
+            <Star className="w-4 h-4" />
+          </Button>
+        </Link>
+      </AuthGuard>
+
+      <AuthGuard>
         <Link href="/notifications">
           <Button variant="ghost" size="icon" className="shrink-0 relative">
             <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -44,7 +52,7 @@ export function SearchBar() {
         </Link>
       </AuthGuard>
 
-      {/* User avatar - visible on larger screens */}
+      {/* User avatar - visible on larger screens only */}
       {user ? (
         <Link href="/profile" className="hidden sm:block">
           <Button variant="ghost" size="icon" className="shrink-0">
@@ -58,7 +66,7 @@ export function SearchBar() {
       ) : (
         <AuthGuard>
           <Button variant="ghost" size="icon" className="hidden sm:block shrink-0">
-            <User className="w-5 h-5" />
+            <Star className="w-5 h-5" />
           </Button>
         </AuthGuard>
       )}

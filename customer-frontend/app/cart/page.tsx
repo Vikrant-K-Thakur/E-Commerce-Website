@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/contexts/cart-context"
+import { BottomNavigation } from "@/components/bottom-navigation"
 
 export default function CartPage() {
   const { items: cartItems, updateQuantity, removeItem, totalPrice, totalItems } = useCart()
@@ -203,6 +204,8 @@ export default function CartPage() {
           </Card>
         )}
       </div>
+
+      <BottomNavigation />
     </div>
   )
 }

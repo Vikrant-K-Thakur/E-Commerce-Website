@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useWishlist } from "@/contexts/wishlist-context"
 import { useCart } from "@/contexts/cart-context"
+import { BottomNavigation } from "@/components/bottom-navigation"
 
 export default function WishlistPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -109,6 +110,8 @@ export default function WishlistPage() {
           </div>
         )}
       </div>
+
+      <BottomNavigation />
     </div>
   )
 }

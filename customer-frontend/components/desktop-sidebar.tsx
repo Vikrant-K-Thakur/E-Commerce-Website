@@ -1,12 +1,11 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Home, Shirt, ShoppingCart, Heart, User, Search, Menu, X, Star, Gift, Bell } from "lucide-react"
+import { Home, Shirt, ShoppingCart, Heart, User, Star, Gift, Bell } from "lucide-react"
 import { AuthGuard } from "@/components/auth-guard"
 import { cn } from "@/lib/utils"
 import { useCart } from "@/contexts/cart-context"
@@ -26,7 +25,6 @@ const baseUserNavigation = [
 ]
 
 export function DesktopSidebar() {
-  const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const { totalItems: cartCount } = useCart()
   const { items: wishlistItems } = useWishlist()
@@ -43,27 +41,8 @@ export function DesktopSidebar() {
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="lg:hidden fixed top-4 left-4 z-50 bg-background/80 backdrop-blur-sm"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </Button>
-
-      {/* Overlay for mobile */}
-      {isOpen && <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setIsOpen(false)} />}
-
-      {/* Sidebar */}
-      <div
-        className={cn(
-          "fixed left-0 top-0 h-full w-64 bg-sidebar border-r border-sidebar-border z-40 transform transition-transform duration-300 ease-in-out",
-          "lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
+      {/* Sidebar - Desktop Only */}
+      <div className="hidden lg:block fixed left-0 top-0 h-full w-64 bg-sidebar border-r border-sidebar-border z-40">
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-sidebar-border">
@@ -91,7 +70,6 @@ export function DesktopSidebar() {
                           ? "bg-sidebar-accent text-sidebar-accent-foreground"
                           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                       )}
-                      onClick={() => setIsOpen(false)}
                     >
                       <item.icon className="w-4 h-4" />
                       {item.name}
@@ -120,7 +98,6 @@ export function DesktopSidebar() {
                             ? "bg-sidebar-accent text-sidebar-accent-foreground"
                             : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                         )}
-                        onClick={() => setIsOpen(false)}
                       >
                         <item.icon className="w-4 h-4" />
                         <span className="flex-1">{item.name}</span>
