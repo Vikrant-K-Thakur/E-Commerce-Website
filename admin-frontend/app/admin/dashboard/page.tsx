@@ -53,7 +53,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-3xl font-bold text-gray-900">$1,245,678</p>
+                <p className="text-3xl font-bold text-gray-900">1,245,678 coins</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-600">+12.5% vs Last Month</span>
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg. Order Value</p>
-                <p className="text-3xl font-bold text-gray-900">$125.50</p>
+                <p className="text-3xl font-bold text-gray-900">125.50 coins</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-600">+2.3% vs Last Month</span>
@@ -151,10 +151,10 @@ export default function AdminDashboard() {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fill: "#6b7280" }}
-                    tickFormatter={(value) => `$${value / 1000}k`}
+                    tickFormatter={(value) => `${value / 1000}k coins`}
                   />
                   <Tooltip
-                    formatter={(value) => [`$${value.toLocaleString()}`, "Revenue"]}
+                    formatter={(value) => [`${value.toLocaleString()} coins`, "Revenue"]}
                     labelStyle={{ color: "#374151" }}
                     contentStyle={{
                       backgroundColor: "white",
@@ -313,7 +313,7 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-600">Total Inventory Value:</span>
-                  <span className="text-lg font-bold text-gray-900">$540,000</span>
+                  <span className="text-lg font-bold text-gray-900">540,000 coins</span>
                 </div>
               </div>
 

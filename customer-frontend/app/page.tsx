@@ -179,7 +179,7 @@ export default function HomePage() {
                         <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">₹{product.price}</span>
+                        <span className="font-semibold">{product.price} coins</span>
                       </div>
                       <Button 
                         size="sm" 

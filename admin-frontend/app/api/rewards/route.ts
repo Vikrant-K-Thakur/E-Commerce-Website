@@ -47,8 +47,9 @@ export async function POST(request: NextRequest) {
         description: data.description,
         customerEmail: data.customerEmail,
         isRead: false,
+        isUsed: false,
         created_at: new Date(),
-        expires_at: data.expires_at ? new Date(data.expires_at) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        expiresAt: data.expires_at ? new Date(data.expires_at) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       }
 
       if (data.customerEmail === 'all') {

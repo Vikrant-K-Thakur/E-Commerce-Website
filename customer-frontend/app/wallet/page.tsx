@@ -116,7 +116,7 @@ export default function WalletPage() {
                   onClick={() => handleQuickAmount(amount)}
                   className="text-xs"
                 >
-                  ₹{amount.toFixed(0)}
+                  {amount.toFixed(0)} coins
                 </Button>
               ))}
             </div>

@@ -100,7 +100,7 @@ export default function ReportsAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-3xl font-bold text-gray-900">$545,000</p>
+                <p className="text-3xl font-bold text-gray-900">545,000 coins</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-600">+18.2% vs last period</span>
@@ -188,7 +188,7 @@ export default function ReportsAnalytics() {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fill: "#6b7280" }}
-                    tickFormatter={(value) => `$${value / 1000}k`}
+                    tickFormatter={(value) => `${value / 1000}k coins`}
                   />
                   <YAxis
                     yAxisId="orders"
@@ -199,7 +199,7 @@ export default function ReportsAnalytics() {
                   />
                   <Tooltip
                     formatter={(value, name) => [
-                      name === "revenue" ? `$${value.toLocaleString()}` : value,
+                      name === "revenue" ? `${value.toLocaleString()} coins` : value,
                       name === "revenue" ? "Revenue" : "Orders",
                     ]}
                     labelStyle={{ color: "#374151" }}
@@ -295,7 +295,7 @@ export default function ReportsAnalytics() {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fill: "#6b7280" }}
-                    tickFormatter={(value) => `$${value / 1000}k`}
+                    tickFormatter={(value) => `${value / 1000}k coins`}
                   />
                   <YAxis
                     type="category"
@@ -306,7 +306,7 @@ export default function ReportsAnalytics() {
                     width={100}
                   />
                   <Tooltip
-                    formatter={(value) => [`$${value.toLocaleString()}`, "Sales"]}
+                    formatter={(value) => [`${value.toLocaleString()} coins`, "Sales"]}
                     labelStyle={{ color: "#374151" }}
                     contentStyle={{
                       backgroundColor: "white",

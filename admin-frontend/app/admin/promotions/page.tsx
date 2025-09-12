@@ -297,7 +297,7 @@ export default function PromotionsMarketing() {
                 </div>
                 <div>
                   <Label htmlFor="redemption-value" className="text-xs text-gray-600">
-                    Redemption Value ($ per point)
+                    Redemption Value (coins per point)
                   </Label>
                   <Input
                     id="redemption-value"

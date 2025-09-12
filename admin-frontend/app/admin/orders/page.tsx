@@ -338,7 +338,7 @@ export default function OrderManagement() {
                           <span className="text-gray-600">{order.orderDate}</span>
                         </td>
                         <td className="py-4 px-4">
-                          <span className="font-medium text-gray-900">${order.total.toFixed(2)}</span>
+                          <span className="font-medium text-gray-900">{order.total.toFixed(2)} coins</span>
                         </td>
                         <td className="py-4 px-4">{getStatusBadge(order.status)}</td>
                         <td className="py-4 px-4">
@@ -375,7 +375,7 @@ export default function OrderManagement() {
                                       </div>
                                       <div>
                                         <Label>Total</Label>
-                                        <p className="font-medium">${selectedOrder.total.toFixed(2)}</p>
+                                        <p className="font-medium">{selectedOrder.total.toFixed(2)} coins</p>
                                       </div>
                                       <div>
                                         <Label>Status</Label>
@@ -538,7 +538,7 @@ export default function OrderManagement() {
                   <div>
                     <p className="font-medium text-gray-900">{order.id}</p>
                     <p className="text-sm text-gray-600">
-                      {order.customer} - ${order.total.toFixed(2)}
+                      {order.customer} - {order.total.toFixed(2)} coins
                     </p>
                   </div>
                   <Badge className="bg-purple-100 text-purple-800">Refunded</Badge>
@@ -567,7 +567,7 @@ export default function OrderManagement() {
                   <div>
                     <p className="font-medium text-gray-900">{order.id}</p>
                     <p className="text-sm text-gray-600">
-                      {order.customer} - ${order.total.toFixed(2)}
+                      {order.customer} - {order.total.toFixed(2)} coins
                     </p>
                   </div>
                   {getStatusBadge(order.status)}

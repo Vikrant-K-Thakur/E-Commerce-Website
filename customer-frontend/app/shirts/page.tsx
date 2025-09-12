@@ -136,7 +136,7 @@ export default function ViewAllProductsPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm lg:text-base">₹{product.price}</span>
+                    <span className="font-semibold text-sm lg:text-base">{product.price} coins</span>
                   </div>
 
                   <Button 

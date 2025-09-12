@@ -1,31 +1,116 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, Minus, Trash2, Tag } from "lucide-react"
+import { ArrowLeft, Plus, Minus, Trash2, Tag, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/contexts/cart-context"
+import { useAuth } from "@/contexts/auth-context"
 import { BottomNavigation } from "@/components/bottom-navigation"
 
 export default function CartPage() {
-  const { items: cartItems, updateQuantity, removeItem, totalPrice, totalItems } = useCart()
-  const [couponCode, setCouponCode] = useState("")
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null)
+  const { items: cartItems, updateQuantity, removeItem, totalPrice, totalItems, clearCart } = useCart()
+  const { user } = useAuth()
+  const [availableCoupons, setAvailableCoupons] = useState<any[]>([])
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [walletBalance, setWalletBalance] = useState(0)
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false)
 
-  const applyCoupon = () => {
-    if (couponCode.toLowerCase() === "save10") {
-      setAppliedCoupon("SAVE10")
-      setCouponCode("")
+  useEffect(() => {
+    if (user?.email) {
+      fetchAvailableCoupons()
+      fetchWalletBalance()
+    }
+  }, [user?.email])
+
+  const fetchAvailableCoupons = async () => {
+    try {
+      const response = await fetch(`/api/rewards?email=${user?.email}`)
+      const data = await response.json()
+      if (data.success) {
+        const validCoupons = data.data.filter((reward: any) => 
+          reward.type === 'discount' && 
+          !reward.isUsed && 
+          new Date(reward.expiresAt) > new Date()
+        )
+        setAvailableCoupons(validCoupons)
+      }
+    } catch (error) {
+      console.error('Failed to fetch coupons:', error)
     }
   }
 
-  const discount = appliedCoupon ? totalPrice * 0.1 : 0
-  const shipping = totalPrice > 50 ? 0 : 8.99
-  const total = totalPrice - discount + shipping
+  const fetchWalletBalance = async () => {
+    try {
+      const response = await fetch(`/api/wallet/add-funds?email=${user?.email}`)
+      const data = await response.json()
+      if (data.success) {
+        setWalletBalance(data.data.coinBalance)
+      }
+    } catch (error) {
+      console.error('Failed to fetch wallet balance:', error)
+    }
+  }
+
+  const applyCoupon = (coupon: any) => {
+    setAppliedCoupon(coupon)
+  }
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null)
+  }
+
+  const discount = appliedCoupon ? (totalPrice * appliedCoupon.value / 100) : 0
+  const total = totalPrice - discount
+
+  const placeOrder = async () => {
+    if (!user?.email) return
+    
+    if (walletBalance < total) {
+      alert(`Insufficient wallet balance. You need ${total - walletBalance} more coins. Please add funds to your wallet.`)
+      return
+    }
+
+    setIsPlacingOrder(true)
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: user.email,
+          items: cartItems,
+          totalAmount: total,
+          discountAmount: discount,
+          couponId: appliedCoupon?._id
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        alert(`Order placed successfully! Order ID: ${data.orderId}`)
+        clearCart()
+        setAppliedCoupon(null)
+        setWalletBalance(data.newBalance)
+      } else {
+        if (data.error === 'Insufficient wallet balance') {
+          alert(`Insufficient wallet balance. You need ${data.requiredAmount - data.currentBalance} more coins. Please add funds to your wallet.`)
+        } else {
+          alert('Failed to place order: ' + data.error)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to place order:', error)
+      alert('Failed to place order. Please try again.')
+    } finally {
+      setIsPlacingOrder(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,7 +150,7 @@ export default function CartPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">₹{item.price}</span>
+                        <span className="font-semibold">{item.price} coins</span>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -121,36 +206,40 @@ export default function CartPage() {
             <CardContent className="p-4 space-y-4">
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-secondary" />
-                <span className="font-medium">Apply Coupon</span>
+                <span className="font-medium">Available Discount Coupons</span>
               </div>
 
               {appliedCoupon ? (
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      {appliedCoupon}
+                      {appliedCoupon.value}% OFF
                     </Badge>
-                    <span className="text-sm text-green-700">10% discount applied</span>
+                    <span className="text-sm text-green-700">{appliedCoupon.description}</span>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setAppliedCoupon(null)} className="text-green-700">
+                  <Button variant="ghost" size="sm" onClick={removeCoupon} className="text-green-700">
                     Remove
                   </Button>
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter coupon code"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button onClick={applyCoupon} variant="outline">
-                    Apply
-                  </Button>
+                <div className="space-y-2">
+                  {availableCoupons.length > 0 ? (
+                    availableCoupons.map((coupon) => (
+                      <div key={coupon._id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{coupon.value}% OFF</Badge>
+                          <span className="text-sm">{coupon.description}</span>
+                        </div>
+                        <Button size="sm" onClick={() => applyCoupon(coupon)}>
+                          Apply
+                        </Button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No discount coupons available</p>
+                  )}
                 </div>
               )}
-
-              <p className="text-xs text-muted-foreground">Try "SAVE10" for 10% off your order</p>
             </CardContent>
           </Card>
         )}
@@ -164,42 +253,54 @@ export default function CartPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal ({totalItems} items)</span>
-                  <span>₹{totalPrice.toFixed(2)}</span>
+                  <span>{totalPrice.toFixed(2)} coins</span>
                 </div>
 
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Discount</span>
-                    <span>-₹{discount.toFixed(2)}</span>
+                    <span>Discount ({appliedCoupon?.value}%)</span>
+                    <span>-{discount.toFixed(2)} coins</span>
                   </div>
                 )}
-
-                <div className="flex justify-between">
-                  <span>Shipping</span>
-                  <span>{shipping === 0 ? "Free" : `₹${shipping.toFixed(2)}`}</span>
-                </div>
 
                 <Separator />
 
                 <div className="flex justify-between font-semibold text-base">
-                  <span>Estimated Total</span>
-                  <span>₹{total.toFixed(2)}</span>
+                  <span>Total Amount</span>
+                  <span>{total.toFixed(2)} coins</span>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <input type="checkbox" id="wallet" className="rounded" />
-                  <label htmlFor="wallet">Use Wallet & Coins</label>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium">Wallet Balance</span>
+                  </div>
+                  <span className="font-semibold text-blue-600">{walletBalance.toFixed(2)} coins</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Current balance: ₹8,854. Available for this order.</p>
+                
+                {walletBalance < total && (
+                  <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                    <p className="text-sm text-red-700">
+                      Insufficient balance. You need {(total - walletBalance).toFixed(2)} more coins.
+                    </p>
+                    <Link href="/wallet">
+                      <Button size="sm" className="mt-2">
+                        Add Funds
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
 
-              <Link href="/checkout">
-                <Button className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                  Proceed to Checkout
-                </Button>
-              </Link>
+              <Button 
+                className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground" 
+                onClick={placeOrder}
+                disabled={isPlacingOrder || walletBalance < total}
+              >
+                {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
+              </Button>
             </CardContent>
           </Card>
         )}

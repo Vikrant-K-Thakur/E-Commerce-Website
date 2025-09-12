@@ -29,11 +29,11 @@ export async function GET(request: NextRequest) {
     const orders = await db.collection('orders').find({}).sort({ orderDate: -1 }).toArray()
     
     const transformedOrders = orders.map(order => ({
-      id: order.id || order._id.toString(),
+      id: order.orderId || order._id.toString(),
       customer: order.customer || 'Unknown Customer',
       customerEmail: order.customerEmail || '',
-      orderDate: order.orderDate ? new Date(order.orderDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      total: order.total || 0,
+      orderDate: order.date || new Date(order.created_at).toISOString().split('T')[0],
+      total: order.totalAmount || 0,
       status: order.status || 'Pending',
       trackingId: order.trackingId || null,
       items: order.items || [],

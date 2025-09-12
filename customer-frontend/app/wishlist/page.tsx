@@ -81,7 +81,7 @@ export default function WishlistPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">₹{item.price}</span>
+                      <span className="font-semibold text-sm">{item.price} coins</span>
                     </div>
 
                     <Button
