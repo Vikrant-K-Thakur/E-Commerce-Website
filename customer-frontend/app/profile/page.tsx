@@ -70,9 +70,11 @@ export default function ProfilePage() {
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Coin Balance</p>
                 <p className="text-2xl font-bold text-foreground">{walletData.balance} Coins</p>
-                <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                  Add Coins
-                </Button>
+                <Link href="/wallet/add-funds">
+                  <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                    Add Coins
+                  </Button>
+                </Link>
               </div>
             </div>
           </CardContent>
