@@ -17,7 +17,7 @@ const walletData = {
 const recentOrders: any[] = []
 
 const menuItems = [
-  { icon: Wallet, label: "Wallet & Rewards", href: "/wallet", badge: null },
+  { icon: Wallet, label: "Wallet", href: "/wallet", badge: null },
   { icon: MapPin, label: "Your Addresses", href: "/addresses", badge: null },
   { icon: ShoppingBag, label: "Order History", href: "/orders", badge: null },
   { icon: Settings, label: "Settings", href: "/settings", badge: null },
