@@ -11,33 +11,10 @@ import { useAuth } from "@/contexts/auth-context"
 
 
 const walletData = {
-  balance: 2450.75,
-  loyaltyCoins: 1280,
+  balance: 0,
 }
 
-const recentOrders = [
-  {
-    id: "R001234",
-    date: "2023-11-20",
-    total: 85.0,
-    status: "Delivered",
-    statusColor: "bg-green-100 text-green-800",
-  },
-  {
-    id: "R001233",
-    date: "2023-11-18",
-    total: 120.5,
-    status: "Processing",
-    statusColor: "bg-blue-100 text-blue-800",
-  },
-  {
-    id: "R001232",
-    date: "2023-11-15",
-    total: 49.99,
-    status: "Cancelled",
-    statusColor: "bg-red-100 text-red-800",
-  },
-]
+const recentOrders: any[] = []
 
 const menuItems = [
   { icon: Wallet, label: "Wallet & Rewards", href: "/wallet", badge: null },
@@ -80,7 +57,7 @@ export default function ProfilePage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground">Wallet & Rewards</h3>
+              <h3 className="font-semibold text-foreground">Wallet</h3>
               <Link href="/wallet">
                 <Button variant="ghost" size="sm" className="text-secondary">
                   View All
@@ -89,20 +66,12 @@ export default function ProfilePage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Wallet Balance</p>
-                <p className="text-2xl font-bold text-foreground">${walletData.balance.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">Coin Balance</p>
+                <p className="text-2xl font-bold text-foreground">{walletData.balance} Coins</p>
                 <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                  Top Up
-                </Button>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Loyalty Coins</p>
-                <p className="text-2xl font-bold text-primary">{walletData.loyaltyCoins}</p>
-                <Button size="sm" variant="outline" className="border-primary text-primary bg-transparent">
-                  Redeem
+                  Add Coins
                 </Button>
               </div>
             </div>
@@ -148,21 +117,27 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-3">
-              {recentOrders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">Order ID</span>
-                      <span className="text-sm text-muted-foreground">{order.id}</span>
+              {recentOrders.length > 0 ? (
+                recentOrders.map((order) => (
+                  <div key={order.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">Order ID</span>
+                        <span className="text-sm text-muted-foreground">{order.id}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Date: {order.date}</span>
+                        <span>Total: ${order.total}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>Date: {order.date}</span>
-                      <span>Total: ${order.total}</span>
-                    </div>
+                    <Badge className={order.statusColor}>{order.status}</Badge>
                   </div>
-                  <Badge className={order.statusColor}>{order.status}</Badge>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No recent orders</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
