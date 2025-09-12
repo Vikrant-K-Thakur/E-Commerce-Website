@@ -6,71 +6,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 
-// Mock order data
+// Empty order data - will be fetched from API
 const orderData = {
-  id: "ORD789012345",
-  date: "2023-11-20",
-  estimatedDelivery: "December 25, 2023",
-  status: "shipped",
-  trackingNumber: "TRK123456789",
-  carrier: "Express Shipping",
-  total: 114.98,
-  items: [
-    {
-      id: 1,
-      name: "Wireless Earbuds",
-      quantity: 1,
-      price: 89.99,
-      image: "/wireless-earbuds.png",
-    },
-    {
-      id: 2,
-      name: "Phone Case",
-      quantity: 1,
-      price: 24.99,
-      image: "/placeholder.svg?height=60&width=60&text=Case",
-    },
-  ],
+  id: "",
+  date: "",
+  estimatedDelivery: "",
+  status: "",
+  trackingNumber: "",
+  carrier: "",
+  total: 0,
+  items: [],
   shippingAddress: {
-    name: "Jane Doe",
-    address: "123 Oak Street, Apartment, CA 90210",
-    phone: "+1 (555) 123-4567",
+    name: "",
+    address: "",
+    phone: "",
   },
-  timeline: [
-    {
-      status: "Order Placed",
-      description: "Your order has been confirmed",
-      date: "2023-11-20",
-      time: "10:30 AM",
-      completed: true,
-    },
-    {
-      status: "Order Shipped",
-      description: "Your order has been dispatched",
-      date: "2023-11-21",
-      time: "2:15 PM",
-      completed: true,
-    },
-    {
-      status: "In Transit",
-      description: "Your order is on the way to you",
-      date: "2023-11-22",
-      time: "8:45 AM",
-      completed: true,
-    },
-    {
-      status: "Delivered",
-      description: "Order was delivered",
-      date: "2023-11-25",
-      time: "Expected by 6:00 PM",
-      completed: false,
-    },
-  ],
+  timeline: [],
 }
 
 export default function OrderTrackingPage({ params }: { params: { id: string } }) {
   const copyTrackingNumber = () => {
-    navigator.clipboard.writeText(orderData.trackingNumber)
+    if (orderData.trackingNumber) {
+      navigator.clipboard.writeText(orderData.trackingNumber)
+    }
   }
 
   const getStatusIcon = (status: string, completed: boolean) => {
@@ -110,21 +68,29 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
         {/* Order Info */}
         <Card>
           <CardContent className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Order ID</p>
-                <p className="font-semibold">{orderData.id}</p>
-              </div>
-              <Badge className="bg-blue-100 text-blue-800">
-                <Truck className="w-3 h-3 mr-1" />
-                Order Shipped
-              </Badge>
-            </div>
+            {orderData.id ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Order ID</p>
+                    <p className="font-semibold">{orderData.id}</p>
+                  </div>
+                  <Badge className="bg-blue-100 text-blue-800">
+                    <Truck className="w-3 h-3 mr-1" />
+                    {orderData.status || 'Processing'}
+                  </Badge>
+                </div>
 
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Estimated Delivery</p>
-              <p className="font-semibold text-foreground">{orderData.estimatedDelivery}</p>
-            </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Estimated Delivery</p>
+                  <p className="font-semibold text-foreground">{orderData.estimatedDelivery || 'N/A'}</p>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Order not found</p>
+              </div>
+            )}
 
             <Link href="/order-details">
               <Button variant="outline" size="sm" className="w-full bg-transparent">

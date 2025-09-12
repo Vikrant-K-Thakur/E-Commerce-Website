@@ -9,47 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-const orders = [
-  {
-    id: "ORD789012345",
-    date: "2023-11-20",
-    items: [
-      { name: "Wireless Earbuds", quantity: 1, price: 89.99 },
-      { name: "Phone Case", quantity: 1, price: 24.99 },
-    ],
-    total: 114.98,
-    status: "delivered",
-    estimatedDelivery: "December 25, 2023",
-    trackingNumber: "TRK123456789",
-  },
-  {
-    id: "ORD789012344",
-    date: "2023-11-18",
-    items: [{ name: "Laptop Sleeve", quantity: 1, price: 45.99 }],
-    total: 45.99,
-    status: "shipped",
-    estimatedDelivery: "December 22, 2023",
-    trackingNumber: "TRK987654321",
-  },
-  {
-    id: "ORD789012343",
-    date: "2023-11-15",
-    items: [{ name: "Premium Headphones", quantity: 1, price: 199.99 }],
-    total: 199.99,
-    status: "processing",
-    estimatedDelivery: "December 28, 2023",
-    trackingNumber: null,
-  },
-  {
-    id: "ORD789012342",
-    date: "2023-11-10",
-    items: [{ name: "Smart Watch", quantity: 1, price: 299.99 }],
-    total: 299.99,
-    status: "cancelled",
-    estimatedDelivery: null,
-    trackingNumber: null,
-  },
-]
+const orders: any[] = []
 
 const getStatusIcon = (status: string) => {
   switch (status) {
