@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowLeft, IndianRupee, Coins, CreditCard, Smartphone, QrCode, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
+
+// Razorpay types
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const quickAmounts = [100, 250, 500, 1000]
 const conversionRate = 1 // 1 Rupee = 1 Coins
@@ -26,6 +33,17 @@ export default function AddFundsPage() {
   const handleQuickAmount = (value: number) => {
     setAmount(value.toString())
   }
+
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    document.body.appendChild(script)
+    return () => {
+      document.body.removeChild(script)
+    }
+  }, [])
 
   const handleAddFunds = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -49,36 +67,102 @@ export default function AddFundsPage() {
     setIsProcessing(true)
 
     try {
-      // Create transaction record
-      const response = await fetch('/api/wallet/add-funds', {
+      // Create Razorpay order
+      const orderResponse = await fetch('/api/wallet/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: user.email,
-          amount: parseFloat(amount),
-          coins: coinsToReceive,
-          paymentMethod: selectedMethod,
-          status: 'pending'
+          amount: parseFloat(amount) * 100, // Razorpay expects amount in paise
+          currency: 'INR'
         })
       })
 
-      const result = await response.json()
+      const orderResult = await orderResponse.json()
 
-      if (result.success) {
-        // Simulate payment processing
-        setTimeout(() => {
-          setIsProcessing(false)
-          setShowSuccess(true)
-          
-          // Reset form after success
-          setTimeout(() => {
-            setShowSuccess(false)
-            setAmount("")
-          }, 3000)
-        }, 2000)
-      } else {
-        throw new Error(result.error || 'Failed to process payment')
+      if (!orderResult.success) {
+        throw new Error(orderResult.error || 'Failed to create order')
       }
+
+      // Razorpay checkout options
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_1234567890', // Replace with your key
+        amount: parseFloat(amount) * 100,
+        currency: 'INR',
+        name: 'Your E-Commerce Store',
+        description: `Add ${coinsToReceive} Coins to Wallet`,
+        order_id: orderResult.orderId,
+        handler: async function (response: any) {
+          // Payment successful
+          try {
+            const verifyResponse = await fetch('/api/wallet/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                email: user.email,
+                amount: parseFloat(amount),
+                coins: coinsToReceive,
+                paymentMethod: selectedMethod
+              })
+            })
+
+            const verifyResult = await verifyResponse.json()
+
+            if (verifyResult.success) {
+              setIsProcessing(false)
+              setShowSuccess(true)
+              
+              toast({
+                title: "Payment Successful!",
+                description: `${coinsToReceive} coins added to your wallet`,
+              })
+              
+              // Reset form after success
+              setTimeout(() => {
+                setShowSuccess(false)
+                setAmount("")
+              }, 3000)
+            } else {
+              throw new Error(verifyResult.error || 'Payment verification failed')
+            }
+          } catch (error) {
+            setIsProcessing(false)
+            toast({
+              title: "Payment Verification Failed",
+              description: "Please contact support if amount was deducted",
+              variant: "destructive"
+            })
+          }
+        },
+        prefill: {
+          name: user.name || '',
+          email: user.email,
+          contact: user.phone || ''
+        },
+        notes: {
+          email: user.email,
+          coins: coinsToReceive
+        },
+        theme: {
+          color: '#3B82F6'
+        },
+        modal: {
+          ondismiss: function() {
+            setIsProcessing(false)
+            toast({
+              title: "Payment Cancelled",
+              description: "You cancelled the payment",
+              variant: "destructive"
+            })
+          }
+        }
+      }
+
+      const rzp = new window.Razorpay(options)
+      rzp.open()
+
     } catch (error) {
       setIsProcessing(false)
       toast({
@@ -265,14 +349,17 @@ export default function AddFundsPage() {
         </Card>
 
         {/* Payment Info */}
-        <Card className="bg-yellow-50 border border-yellow-200">
+        <Card className="bg-green-50 border border-green-200">
           <CardContent className="p-4">
-            <h3 className="font-semibold text-yellow-800 mb-2">Payment Details</h3>
-            <div className="space-y-1 text-sm text-yellow-700">
-              <p><strong>Account Name:</strong> [YOUR_BUSINESS_NAME]</p>
-              <p><strong>UPI ID:</strong> [YOUR_UPI_ID]</p>
-              <p><strong>Account Number:</strong> [YOUR_ACCOUNT_NUMBER]</p>
-              <p><strong>IFSC Code:</strong> [YOUR_IFSC_CODE]</p>
+            <h3 className="font-semibold text-green-800 mb-2">💰 Money Settlement Details</h3>
+            <div className="space-y-1 text-sm text-green-700">
+              <p><strong>Payment Gateway:</strong> Razorpay</p>
+              <p><strong>Settlement Account:</strong> Your registered bank account with Razorpay</p>
+              <p><strong>Settlement Time:</strong> T+2 working days (automatic)</p>
+              <p><strong>Transaction Fee:</strong> 2% + GST (deducted automatically)</p>
+            </div>
+            <div className="mt-3 p-2 bg-green-100 rounded text-xs text-green-800">
+              💡 <strong>Note:</strong> Money will be automatically transferred to your Razorpay registered bank account after T+2 days
             </div>
           </CardContent>
         </Card>
