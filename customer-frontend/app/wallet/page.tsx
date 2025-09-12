@@ -1,20 +1,45 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowLeft, Plus, TrendingUp, TrendingDown, Clock, Bell, IndianRupee } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/contexts/auth-context"
 
-const coinBalance = 0
 const quickAmounts = [25.0, 50.0, 100.0]
-
-const transactions: any[] = []
 
 export default function WalletPage() {
   const [addAmount, setAddAmount] = useState("")
+  const [coinBalance, setCoinBalance] = useState(0)
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [walletLoading, setWalletLoading] = useState(true)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchWalletData()
+    }
+  }, [user?.email])
+
+  const fetchWalletData = async () => {
+    if (!user?.email) return
+    
+    try {
+      const response = await fetch(`/api/wallet/add-funds?email=${user.email}`)
+      const result = await response.json()
+      if (result.success) {
+        setCoinBalance(result.data.coinBalance || 0)
+        setTransactions(result.data.transactions || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch wallet data:', error)
+    } finally {
+      setWalletLoading(false)
+    }
+  }
 
   const handleQuickAmount = (amount: number) => {
     setAddAmount(amount.toFixed(2))
@@ -43,7 +68,7 @@ export default function WalletPage() {
           <CardContent className="p-6 text-center space-y-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Current Balance</p>
-              <p className="text-4xl font-bold text-foreground">{coinBalance} Coins</p>
+              <p className="text-4xl font-bold text-foreground">{walletLoading ? 'Loading...' : `${coinBalance} Coins`}</p>
             </div>
 
             <div className="flex gap-3">
@@ -143,7 +168,7 @@ export default function WalletPage() {
                     </div>
                     <div className="text-right">
                       <p className={`font-semibold ${transaction.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.amount || 0)} Coins
+                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} Coins
                       </p>
                     </div>
                   </div>

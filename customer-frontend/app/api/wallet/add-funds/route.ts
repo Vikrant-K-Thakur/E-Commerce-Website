@@ -95,7 +95,6 @@ export async function GET(request: NextRequest) {
     const transactions = await db.collection('transactions')
       .find({ email })
       .sort({ created_at: -1 })
-      .limit(10)
       .toArray()
 
     return NextResponse.json({ 

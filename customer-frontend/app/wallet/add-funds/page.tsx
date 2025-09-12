@@ -190,7 +190,7 @@ export default function AddFundsPage() {
               <p className="text-2xl font-bold text-blue-600">{coinsToReceive} Coins</p>
             </div>
             <Link href="/wallet">
-              <Button className="w-full">
+              <Button className="w-full" onClick={() => window.location.reload()}>
                 Go to Wallet
               </Button>
             </Link>

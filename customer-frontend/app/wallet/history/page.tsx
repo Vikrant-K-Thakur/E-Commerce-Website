@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowLeft, TrendingUp, TrendingDown, Clock, Filter, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -8,12 +8,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-const transactions: any[] = []
+import { useAuth } from "@/contexts/auth-context"
 
 export default function WalletHistoryPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchTransactions()
+    }
+  }, [user?.email])
+
+  const fetchTransactions = async () => {
+    if (!user?.email) return
+    
+    try {
+      const response = await fetch(`/api/wallet/add-funds?email=${user.email}`)
+      const result = await response.json()
+      if (result.success) {
+        setTransactions(result.data.transactions || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch = transaction.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -61,7 +85,12 @@ export default function WalletHistoryPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentTransactions.length > 0 ? (
+              {loading ? (
+                <div className="text-center py-8">
+                  <Clock className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+                  <p className="text-muted-foreground">Loading transactions...</p>
+                </div>
+              ) : recentTransactions.length > 0 ? (
                 recentTransactions.map((transaction) => (
                   <div key={transaction.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                     <div className="flex items-center gap-3">
@@ -92,7 +121,7 @@ export default function WalletHistoryPage() {
                     </div>
                     <div className="text-right">
                       <p className={`font-semibold ${transaction.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.amount || 0)} Coins
+                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} Coins
                       </p>
                     </div>
                   </div>
@@ -121,7 +150,12 @@ export default function WalletHistoryPage() {
 
               <TabsContent value={activeTab}>
                 <div className="space-y-3">
-                  {filteredTransactions.length > 0 ? (
+                  {loading ? (
+                    <div className="text-center py-8">
+                      <Clock className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+                      <p className="text-muted-foreground">Loading transactions...</p>
+                    </div>
+                  ) : filteredTransactions.length > 0 ? (
                     filteredTransactions.map((transaction) => (
                       <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/20 transition-colors">
                         <div className="flex items-center gap-3">
@@ -152,7 +186,7 @@ export default function WalletHistoryPage() {
                         </div>
                         <div className="text-right">
                           <p className={`font-semibold ${transaction.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                            {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.amount || 0)} Coins
+                            {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} Coins
                           </p>
                         </div>
                       </div>

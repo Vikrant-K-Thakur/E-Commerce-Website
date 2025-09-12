@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Users, Package, LineChart, Shield, LogOut, Shirt } from "lucide-react"
+import { BarChart3, Users, Package, LineChart, Shield, LogOut, Shirt, Gift } from "lucide-react"
 import { clearAuthCookie } from "../lib/auth"
 
 const links = [
@@ -10,6 +10,7 @@ const links = [
   { href: "/admin/orders", label: "Orders", icon: Package },
   { href: "/admin/add-product", label: "Add Product", icon: Package },
   { href: "/admin/customers", label: "Customers", icon: Users },
+  { href: "/admin/redeem-codes", label: "Redeem Codes", icon: Gift },
   { href: "/admin/analytics", label: "Analytics", icon: LineChart },
   { href: "/admin/admins", label: "Admins", icon: Shield },
 ]

@@ -82,6 +82,21 @@ export async function POST(request: NextRequest) {
       { upsert: true }
     )
 
+    // Create reward notification for funds added
+    const fundNotification = {
+      id: new Date().getTime().toString() + Math.random().toString(36).substr(2, 9),
+      type: 'coins',
+      value: parseInt(coins),
+      title: 'Funds Added Successfully',
+      description: `You have successfully added ₹${parseFloat(amount)} to your wallet and received ${parseInt(coins)} coins`,
+      customerEmail: email,
+      isRead: false,
+      created_at: new Date(),
+      expires_at: null
+    }
+
+    await db.collection('rewards').insertOne(fundNotification)
+
     return NextResponse.json({ 
       success: true, 
       message: 'Payment verified and funds added successfully',

@@ -79,15 +79,34 @@ export function SearchBar() {
         </Link>
       </AuthGuard>
 
+      {/* Rewards icon - visible on larger screens */}
+      <AuthGuard>
+        <Link href="/rewards" className="hidden sm:block">
+          <Button variant="ghost" size="icon" className="shrink-0 relative">
+            <Star className="w-4 h-4 sm:w-5 sm:h-5" />
+            {rewardCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {rewardCount > 9 ? '9+' : rewardCount}
+              </span>
+            )}
+          </Button>
+        </Link>
+      </AuthGuard>
+
       {/* User avatar - visible on larger screens only */}
       {user ? (
         <Link href="/profile" className="hidden sm:block">
-          <Button variant="ghost" size="icon" className="shrink-0">
+          <Button variant="ghost" size="icon" className="shrink-0 relative">
             <img
               src={user.avatar || "/placeholder.svg?height=32&width=32"}
               alt={user.name}
               className="w-6 h-6 rounded-full"
             />
+            {rewardCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {rewardCount > 9 ? '9+' : rewardCount}
+              </span>
+            )}
           </Button>
         </Link>
       ) : (

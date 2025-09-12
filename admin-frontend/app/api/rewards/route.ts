@@ -64,14 +64,77 @@ export async function POST(request: NextRequest) {
           customerEmail: customer.email
         }))
         
-        const result = await db.collection('rewards').insertMany(rewards)
+        // Insert rewards
+        await db.collection('rewards').insertMany(rewards)
+        
+        // If coins, update all customer wallets and create transactions
+        if (data.type === 'coins') {
+          for (const customer of customers) {
+            // Update wallet
+            await db.collection('customers').updateOne(
+              { email: customer.email },
+              { 
+                $inc: { coinBalance: parseFloat(data.value) },
+                $set: { updated_at: new Date() }
+              },
+              { upsert: true }
+            )
+            
+            // Create transaction
+            const transaction = {
+              id: new Date().getTime().toString() + Math.random().toString(36).substr(2, 9),
+              email: customer.email,
+              type: 'credit',
+              description: `Admin Reward: ${data.title}`,
+              amount: 0,
+              coins: parseFloat(data.value),
+              paymentMethod: 'admin_reward',
+              status: 'completed',
+              created_at: new Date(),
+              date: new Date().toISOString().split('T')[0],
+              time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+            }
+            await db.collection('transactions').insertOne(transaction)
+          }
+        }
+        
         return NextResponse.json({ 
           success: true, 
-          message: `Reward sent to ${result.insertedCount} customers successfully!` 
+          message: `Reward sent to ${customers.length} customers successfully!` 
         })
       } else {
         // Send to specific customer
-        const result = await db.collection('rewards').insertOne(reward)
+        await db.collection('rewards').insertOne(reward)
+        
+        // If coins, update customer wallet and create transaction
+        if (data.type === 'coins') {
+          // Update wallet
+          await db.collection('customers').updateOne(
+            { email: data.customerEmail },
+            { 
+              $inc: { coinBalance: parseFloat(data.value) },
+              $set: { updated_at: new Date() }
+            },
+            { upsert: true }
+          )
+          
+          // Create transaction
+          const transaction = {
+            id: new Date().getTime().toString(),
+            email: data.customerEmail,
+            type: 'credit',
+            description: `Admin Reward: ${data.title}`,
+            amount: 0,
+            coins: parseFloat(data.value),
+            paymentMethod: 'admin_reward',
+            status: 'completed',
+            created_at: new Date(),
+            date: new Date().toISOString().split('T')[0],
+            time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+          }
+          await db.collection('transactions').insertOne(transaction)
+        }
+        
         return NextResponse.json({ 
           success: true, 
           message: 'Reward sent successfully!' 

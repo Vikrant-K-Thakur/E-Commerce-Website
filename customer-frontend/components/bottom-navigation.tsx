@@ -8,6 +8,7 @@ import { AuthGuard } from "@/components/auth-guard"
 import { useAuth } from "@/contexts/auth-context"
 import { useCart } from "@/contexts/cart-context"
 import { useWishlist } from "@/contexts/wishlist-context"
+import { useState, useEffect } from "react"
 
 const navItems = [
   { href: "/", icon: Home, label: "Home", requireAuth: false },
@@ -22,10 +23,33 @@ export function BottomNavigation() {
   const { user } = useAuth()
   const { totalItems: cartCount } = useCart()
   const { items: wishlistItems } = useWishlist()
+  const [rewardCount, setRewardCount] = useState(0)
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchRewardCount()
+    }
+  }, [user?.email])
+
+  const fetchRewardCount = async () => {
+    if (!user?.email) return
+    
+    try {
+      const response = await fetch(`/api/rewards?email=${user.email}`)
+      const result = await response.json()
+      if (result.success) {
+        const unreadCount = result.data.filter((reward: any) => !reward.isRead).length
+        setRewardCount(unreadCount)
+      }
+    } catch (error) {
+      console.error('Failed to fetch reward count:', error)
+    }
+  }
 
   const getItemCount = (href: string) => {
     if (href === "/cart") return cartCount
     if (href === "/wishlist") return wishlistItems.length
+    if (href === "/profile") return rewardCount
     return 0
   }
 
@@ -47,9 +71,11 @@ export function BottomNavigation() {
                 >
                   <div className="relative">
                     <IconComponent className="w-5 h-5" />
-                    {(item.href === "/cart" || item.href === "/wishlist") && getItemCount(item.href) > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-secondary text-secondary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-medium">
-                        {getItemCount(item.href)}
+                    {(item.href === "/cart" || item.href === "/wishlist" || item.href === "/profile") && getItemCount(item.href) > 0 && (
+                      <span className={`absolute -top-1 -right-1 text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-medium ${
+                        item.href === "/profile" ? "bg-red-500 text-white" : "bg-secondary text-secondary-foreground"
+                      }`}>
+                        {getItemCount(item.href) > 9 ? '9+' : getItemCount(item.href)}
                       </span>
                     )}
                   </div>
@@ -70,9 +96,11 @@ export function BottomNavigation() {
             >
               <div className="relative">
                 <IconComponent className="w-5 h-5" />
-                {(item.href === "/cart" || item.href === "/wishlist") && getItemCount(item.href) > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-secondary text-secondary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-medium">
-                    {getItemCount(item.href)}
+                {(item.href === "/cart" || item.href === "/wishlist" || item.href === "/profile") && getItemCount(item.href) > 0 && (
+                  <span className={`absolute -top-1 -right-1 text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-medium ${
+                    item.href === "/profile" ? "bg-red-500 text-white" : "bg-secondary text-secondary-foreground"
+                  }`}>
+                    {getItemCount(item.href) > 9 ? '9+' : getItemCount(item.href)}
                   </span>
                 )}
               </div>

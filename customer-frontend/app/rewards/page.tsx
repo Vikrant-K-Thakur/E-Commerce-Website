@@ -71,16 +71,62 @@ export default function RewardsPage() {
       return
     }
 
-    setIsRedeeming(true)
-    // TODO: API call to redeem coupon will be added later
-    setTimeout(() => {
-      setIsRedeeming(false)
+    if (!user?.email) {
       toast({
-        title: "Coupon Redeemed!",
-        description: "Your coupon has been successfully applied",
+        title: "Authentication Required",
+        description: "Please log in to redeem codes",
+        variant: "destructive"
       })
-      setCouponCode("")
-    }, 2000)
+      return
+    }
+
+    setIsRedeeming(true)
+
+    try {
+      const response = await fetch('/api/redeem-codes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'redeem',
+          code: couponCode.trim().toUpperCase(),
+          email: user.email
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast({
+          title: "Code Redeemed Successfully!",
+          description: result.message,
+        })
+        setCouponCode("")
+        
+        // Refresh rewards for notification
+        setTimeout(() => {
+          fetchRewards()
+        }, 1000)
+      } else {
+        toast({
+          title: "Redemption Failed",
+          description: result.error || "Invalid or expired code",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Failed to redeem code:', error)
+      toast({
+        title: "Network Error",
+        description: `Failed to redeem code: ${error.message}`,
+        variant: "destructive"
+      })
+    } finally {
+      setIsRedeeming(false)
+    }
   }
 
   return (

@@ -1,4 +1,5 @@
 "use client"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Bell, ChevronRight, Wallet, MapPin, ShoppingBag, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -25,6 +26,30 @@ const menuItems = [
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
+  const [coinBalance, setCoinBalance] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchWalletData()
+    }
+  }, [user?.email])
+
+  const fetchWalletData = async () => {
+    if (!user?.email) return
+    
+    try {
+      const response = await fetch(`/api/wallet/add-funds?email=${user.email}`)
+      const result = await response.json()
+      if (result.success) {
+        setCoinBalance(result.data.coinBalance || 0)
+      }
+    } catch (error) {
+      console.error('Failed to fetch wallet data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (!user) {
     return (
@@ -69,7 +94,7 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Coin Balance</p>
-                <p className="text-2xl font-bold text-foreground">{walletData.balance} Coins</p>
+                <p className="text-2xl font-bold text-foreground">{loading ? '...' : coinBalance} Coins</p>
                 <Link href="/wallet/add-funds">
                   <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
                     Add Coins
