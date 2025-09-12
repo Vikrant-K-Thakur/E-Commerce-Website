@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, Gift, Ticket, Bell, CheckCircle, AlertCircle, Clock, Coins, Percent, Star } from "lucide-react"
+import { ArrowLeft, Gift, Ticket, Bell, CheckCircle, AlertCircle, Clock, Coins, Percent, Star, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +17,9 @@ export default function RewardsPage() {
   const [isRedeeming, setIsRedeeming] = useState(false)
   const [rewards, setRewards] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showPopup, setShowPopup] = useState(false)
+  const [popupMessage, setPopupMessage] = useState("")
+  const [popupType, setPopupType] = useState<'success' | 'error'>('success')
   const { toast } = useToast()
   const { user } = useAuth()
 
@@ -100,30 +103,40 @@ export default function RewardsPage() {
       const result = await response.json()
 
       if (result.success) {
-        toast({
-          title: "Code Redeemed Successfully!",
-          description: result.message,
-        })
+        setPopupType('success')
+        setPopupMessage(result.message || 'Code redeemed successfully!')
+        setShowPopup(true)
         setCouponCode("")
         
         // Refresh rewards for notification
         setTimeout(() => {
           fetchRewards()
         }, 1000)
+        
+        // Auto hide popup after 3 seconds
+        setTimeout(() => {
+          setShowPopup(false)
+        }, 3000)
       } else {
-        toast({
-          title: "Redemption Failed",
-          description: result.error || "Invalid or expired code",
-          variant: "destructive"
-        })
+        setPopupType('error')
+        setPopupMessage(result.error || 'Invalid or expired code')
+        setShowPopup(true)
+        
+        // Auto hide popup after 3 seconds
+        setTimeout(() => {
+          setShowPopup(false)
+        }, 3000)
       }
     } catch (error) {
       console.error('Failed to redeem code:', error)
-      toast({
-        title: "Network Error",
-        description: `Failed to redeem code: ${error.message}`,
-        variant: "destructive"
-      })
+      setPopupType('error')
+      setPopupMessage(`Network error: ${error.message || 'Failed to redeem code'}`)
+      setShowPopup(true)
+      
+      // Auto hide popup after 3 seconds
+      setTimeout(() => {
+        setShowPopup(false)
+      }, 3000)
     } finally {
       setIsRedeeming(false)
     }
@@ -349,6 +362,57 @@ export default function RewardsPage() {
       </div>
 
       <BottomNavigation />
+      
+      {/* Popup Message */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className={`bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl ${
+            popupType === 'success' ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'
+          }`}>
+            <div className="flex items-start gap-3">
+              <div className={`p-2 rounded-full ${
+                popupType === 'success' ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {popupType === 'success' ? (
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                ) : (
+                  <AlertCircle className="w-6 h-6 text-red-600" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className={`font-semibold text-lg ${
+                  popupType === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {popupType === 'success' ? 'Success!' : 'Error!'}
+                </h3>
+                <p className="text-gray-600 text-sm mt-1">
+                  {popupMessage}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPopup(false)}
+                className="p-1 h-auto"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button
+                onClick={() => setShowPopup(false)}
+                className={`${
+                  popupType === 'success' 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-red-600 hover:bg-red-700'
+                } text-white`}
+              >
+                OK
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
