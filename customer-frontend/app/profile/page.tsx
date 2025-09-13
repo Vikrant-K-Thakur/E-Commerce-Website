@@ -170,44 +170,7 @@ export default function ProfilePage() {
           })}
         </div>
 
-        {/* Order History Preview */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground">Order History</h3>
-              <Link href="/orders">
-                <Button variant="ghost" size="sm" className="text-secondary">
-                  View All
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
 
-            <div className="space-y-3">
-              {recentOrders.length > 0 ? (
-                recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">Order ID</span>
-                        <span className="text-sm text-muted-foreground">{order.id}</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>Date: {order.date}</span>
-                        <span>Total: ${order.total}</span>
-                      </div>
-                    </div>
-                    <Badge className={order.statusColor}>{order.status}</Badge>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No recent orders</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Logout */}
         <Card>

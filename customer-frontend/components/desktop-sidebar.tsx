@@ -32,15 +32,18 @@ export function DesktopSidebar() {
   const { totalItems: cartCount } = useCart()
   const { items: wishlistItems } = useWishlist()
   const [notificationCount, setNotificationCount] = useState(0)
+  const [rewardCount, setRewardCount] = useState(0)
 
   useEffect(() => {
     if (user?.email) {
       fetchNotificationCount()
+      fetchRewardCount()
     }
     
     const handleNotificationUpdate = () => {
       if (user?.email) {
         fetchNotificationCount()
+        fetchRewardCount()
       }
     }
     
@@ -63,6 +66,21 @@ export function DesktopSidebar() {
     }
   }
 
+  const fetchRewardCount = async () => {
+    if (!user?.email) return
+    
+    try {
+      const response = await fetch(`/api/rewards?email=${user.email}`)
+      const result = await response.json()
+      if (result.success) {
+        const unreadCount = result.data.filter((reward: any) => !reward.isRead).length
+        setRewardCount(unreadCount)
+      }
+    } catch (error) {
+      console.error('Failed to fetch reward count:', error)
+    }
+  }
+
   const userNavigation = baseUserNavigation.map(item => {
     if (item.type === "cart" && cartCount > 0) {
       return { ...item, badge: cartCount.toString() }
@@ -72,6 +90,9 @@ export function DesktopSidebar() {
     }
     if (item.type === "notifications" && notificationCount > 0) {
       return { ...item, badge: notificationCount > 9 ? '9+' : notificationCount.toString() }
+    }
+    if (item.name === "Rewards" && rewardCount > 0) {
+      return { ...item, badge: rewardCount > 9 ? '9+' : rewardCount.toString() }
     }
     return item
   })

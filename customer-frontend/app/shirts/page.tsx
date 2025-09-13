@@ -1,14 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search } from "lucide-react"
+import { Search, Heart } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BottomNavigation } from "@/components/bottom-navigation"
+import { SizeSelectionDialog } from "@/components/size-selection-dialog"
 import { getProducts } from "@/lib/products"
 import { useCart } from "@/contexts/cart-context"
+import { useWishlist } from "@/contexts/wishlist-context"
 
 export default function ViewAllProductsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -17,6 +19,9 @@ export default function ViewAllProductsPage() {
   const [sortBy, setSortBy] = useState("name")
   const [loading, setLoading] = useState(true)
   const { addToCart } = useCart()
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
+  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [showSizeDialog, setShowSizeDialog] = useState(false)
 
   useEffect(() => {
     fetchProducts()
@@ -53,13 +58,37 @@ export default function ViewAllProductsPage() {
   }
 
   const handleAddToCart = (product: any) => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      quantity: 1
-    })
+    const availableSizes = product.sizes?.filter((s: any) => {
+      if (typeof s === 'string') return true
+      return s.available !== false
+    }) || []
+
+    if (availableSizes.length > 0) {
+      setSelectedProduct(product)
+      setShowSizeDialog(true)
+    } else {
+      addToCart({
+        id: product.id,
+        productId: product.productId,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        quantity: 1
+      })
+    }
+  }
+
+  const handleWishlistToggle = (product: any) => {
+    if (isInWishlist(product.id)) {
+      removeFromWishlist(product.id)
+    } else {
+      addToWishlist({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image
+      })
+    }
   }
 
   return (
@@ -128,6 +157,12 @@ export default function ViewAllProductsPage() {
                     alt={product.name}
                     className="w-full h-40 lg:h-48 object-cover"
                   />
+                  <button
+                    onClick={() => handleWishlistToggle(product)}
+                    className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors"
+                  >
+                    <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? 'text-red-500 fill-red-500' : 'text-muted-foreground'}`} />
+                  </button>
                 </div>
                 <CardContent className="p-3 lg:p-4 space-y-2 lg:space-y-3">
                   <div className="space-y-1">
@@ -160,6 +195,15 @@ export default function ViewAllProductsPage() {
       </div>
 
       <BottomNavigation />
+      
+      <SizeSelectionDialog
+        product={selectedProduct}
+        isOpen={showSizeDialog}
+        onClose={() => {
+          setShowSizeDialog(false)
+          setSelectedProduct(null)
+        }}
+      />
     </div>
   )
 }

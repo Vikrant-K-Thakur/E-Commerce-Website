@@ -77,21 +77,34 @@ export default function CartPage() {
 
     setIsPlacingOrder(true)
     try {
+      const orderData = {
+        email: user.email,
+        items: cartItems.map(item => ({
+          id: item.id,
+          productId: item.productId || item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          size: item.size || 'N/A',
+          image: item.image
+        })),
+        totalAmount: total
+      }
+      
+      if (discount > 0) {
+        orderData.discountAmount = discount
+      }
+      
+      if (appliedCoupon?._id) {
+        orderData.couponId = appliedCoupon._id
+      }
+
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: user.email,
-          items: cartItems.map(item => ({
-            ...item,
-            size: item.size || 'N/A'
-          })),
-          totalAmount: total,
-          discountAmount: discount,
-          couponId: appliedCoupon?._id
-        })
+        body: JSON.stringify(orderData)
       })
 
       const data = await response.json()

@@ -42,3 +42,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Operation failed: ' + error.message })
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const { email, action } = await request.json()
+    
+    if (!email) {
+      return NextResponse.json({ success: false, error: 'Email required' })
+    }
+
+    const db = await connectDB()
+    if (!db) {
+      return NextResponse.json({ success: false, error: 'Database connection failed' })
+    }
+
+    if (action === 'markAsRead') {
+      await db.collection('rewards').updateMany(
+        { customerEmail: email },
+        { $set: { isRead: true, updated_at: new Date() } }
+      )
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('API Error:', error)
+    return NextResponse.json({ success: false, error: 'Operation failed: ' + error.message })
+  }
+}

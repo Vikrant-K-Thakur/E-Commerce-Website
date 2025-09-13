@@ -38,11 +38,33 @@ export default function RewardsPage() {
       const result = await response.json()
       if (result.success) {
         setRewards(result.data)
+        // Mark all rewards as read when viewing
+        markRewardsAsRead()
       }
     } catch (error) {
       console.error('Failed to fetch rewards:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const markRewardsAsRead = async () => {
+    if (!user?.email) return
+    
+    try {
+      await fetch('/api/rewards', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          action: 'markAsRead'
+        })
+      })
+      
+      // Trigger notification update event
+      window.dispatchEvent(new Event('notificationUpdate'))
+    } catch (error) {
+      console.error('Failed to mark rewards as read:', error)
     }
   }
 
@@ -260,7 +282,7 @@ export default function RewardsPage() {
           </TabsContent>
 
           {/* Reward Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6 mt-6">
+          <TabsContent value="notifications" className="space-y-6 mt-6" onFocus={markRewardsAsRead}>
             {/* Notifications Header */}
             <Card className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100 shadow-sm">
               <CardContent className="p-6 text-center">

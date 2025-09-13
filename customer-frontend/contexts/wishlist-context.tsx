@@ -1,7 +1,6 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { saveWishlist, getWishlist } from '@/lib/database'
 import { useAuth } from './auth-context'
 
 interface WishlistItem {
@@ -43,13 +42,31 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const loadWishlistFromDB = async () => {
     if (!user?.email) return
-    const wishlistItems = await getWishlist(user.email)
-    setItems(wishlistItems)
+    try {
+      const response = await fetch(`/api/wishlist?email=${user.email}`)
+      const result = await response.json()
+      if (result.success) {
+        setItems(result.data || [])
+      }
+    } catch (error) {
+      console.error('Failed to load wishlist:', error)
+    }
   }
 
   const saveWishlistToDB = async () => {
     if (!user?.email) return
-    await saveWishlist(user.email, items)
+    try {
+      await fetch('/api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          wishlistItems: items
+        })
+      })
+    } catch (error) {
+      console.error('Failed to save wishlist:', error)
+    }
   }
 
   const addToWishlist = (item: WishlistItem) => {
