@@ -10,14 +10,17 @@ interface CartItem {
   price: number
   quantity: number
   image?: string
+  size?: string
+  productId?: string
 }
 
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'quantity'>) => void
   addToCart: (item: Omit<CartItem, 'quantity'>) => void
-  removeItem: (id: string) => void
-  updateQuantity: (id: string, quantity: number) => void
+  removeItem: (id: string, size?: string) => void
+  updateQuantity: (id: string, quantity: number, size?: string) => void
+  updateSize: (id: string, oldSize: string | undefined, newSize: string) => void
   clearCart: () => void
   totalItems: number
   totalPrice: number
@@ -67,11 +70,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = (newItem: Omit<CartItem, 'quantity'>) => {
     setItems(prev => {
-      const existing = prev.find(item => item.id === newItem.id)
+      // For items with size, check both id and size for uniqueness
+      const existing = prev.find(item => 
+        item.id === newItem.id && 
+        (newItem.size ? item.size === newItem.size : !item.size)
+      )
       let updatedItems
       if (existing) {
         updatedItems = prev.map(item =>
-          item.id === newItem.id
+          item.id === newItem.id && 
+          (newItem.size ? item.size === newItem.size : !item.size)
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
@@ -88,9 +96,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })
   }
 
-  const removeItem = (id: string) => {
+  const removeItem = (id: string, size?: string) => {
     setItems(prev => {
-      const updatedItems = prev.filter(item => item.id !== id)
+      const updatedItems = prev.filter(item => 
+        !(item.id === id && (size ? item.size === size : true))
+      )
       
       // Immediately save to database
       if (user?.email) {
@@ -101,14 +111,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })
   }
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number, size?: string) => {
     if (quantity <= 0) {
-      removeItem(id)
+      removeItem(id, size)
       return
     }
     setItems(prev => {
       const updatedItems = prev.map(item =>
-        item.id === id ? { ...item, quantity } : item
+        item.id === id && (size ? item.size === size : true)
+          ? { ...item, quantity } : item
+      )
+      
+      // Immediately save to database
+      if (user?.email) {
+        saveCart(user.email, updatedItems).catch(console.error)
+      }
+      
+      return updatedItems
+    })
+  }
+
+  const updateSize = (id: string, oldSize: string | undefined, newSize: string) => {
+    setItems(prev => {
+      const updatedItems = prev.map(item =>
+        item.id === id && item.size === oldSize
+          ? { ...item, size: newSize }
+          : item
       )
       
       // Immediately save to database
@@ -139,6 +167,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       addToCart: addItem,
       removeItem,
       updateQuantity,
+      updateSize,
       clearCart,
       totalItems,
       totalPrice

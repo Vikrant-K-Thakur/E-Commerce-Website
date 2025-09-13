@@ -36,29 +36,75 @@ export async function GET() {
   }
 }
 
-// 📌 POST add product
+// 📌 POST add/update product
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json()
+    const { action, ...data } = await request.json()
     const db = await connectDB()
     if (!db) return NextResponse.json({ success: false, error: 'Database connection failed' })
 
-    const product = {
-      name: data.name,
-      price: data.price,
-      description: data.description,
-      image: data.image,
-      created_at: new Date(),
-      updated_at: new Date(),
+    if (action === 'add') {
+      // Validate required fields
+      if (!data.productId || !data.name || !data.price || !data.description || !data.image) {
+        return NextResponse.json({ success: false, error: 'All required fields must be filled' })
+      }
+
+      // Check if product ID already exists
+      const existing = await db.collection('products').findOne({ productId: data.productId })
+      if (existing) {
+        return NextResponse.json({ success: false, error: 'ID already exists, please assign unique ID' })
+      }
+
+      const product = {
+        productId: data.productId,
+        name: data.name,
+        price: parseFloat(data.price),
+        description: data.description,
+        image: data.image,
+        category: data.category || '',
+        sizes: data.sizes || [],
+        created_at: new Date(),
+        updated_at: new Date(),
+      }
+
+      const result = await db.collection('products').insertOne(product)
+      return NextResponse.json({
+        success: true,
+        data: { ...product, id: result.insertedId.toString() }
+      })
     }
 
-    const result = await db.collection('products').insertOne(product)
-    return NextResponse.json({
-      success: true,
-      data: { ...product, id: result.insertedId.toString() }
-    })
+    if (action === 'update') {
+      // Validate required fields
+      if (!data.id || !data.name || !data.price || !data.description || !data.image) {
+        return NextResponse.json({ success: false, error: 'All required fields must be filled' })
+      }
+
+      const updateData = {
+        name: data.name,
+        price: parseFloat(data.price),
+        description: data.description,
+        image: data.image,
+        category: data.category || '',
+        sizes: data.sizes || [],
+        updated_at: new Date(),
+      }
+
+      const result = await db.collection('products').updateOne(
+        { _id: new ObjectId(data.id) },
+        { $set: updateData }
+      )
+
+      if (result.matchedCount === 0) {
+        return NextResponse.json({ success: false, error: 'Product not found' })
+      }
+
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json({ success: false, error: 'Invalid action' })
   } catch (error) {
-    console.error('Add product failed:', error)
+    console.error('Product operation failed:', error)
     return NextResponse.json({ success: false, error: 'Operation failed' })
   }
 }

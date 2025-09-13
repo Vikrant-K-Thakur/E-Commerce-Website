@@ -13,6 +13,7 @@ import { CategoryGrid } from "@/components/category-grid"
 import { FeaturedProducts } from "@/components/featured-products"
 import { HeroBanner } from "@/components/hero-banner"
 import { BottomNavigation } from "@/components/bottom-navigation"
+import { SizeSelectionDialog } from "@/components/size-selection-dialog"
 import { getProducts } from "@/lib/products"
 import { useCart } from "@/contexts/cart-context"
 
@@ -23,6 +24,8 @@ export default function HomePage() {
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [sortBy, setSortBy] = useState("name")
   const { addToCart } = useCart()
+  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [showSizeDialog, setShowSizeDialog] = useState(false)
 
   useEffect(() => {
     fetchProducts()
@@ -61,13 +64,24 @@ export default function HomePage() {
   }
 
   const handleAddToCart = (product: any) => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      quantity: 1
-    })
+    const availableSizes = product.sizes?.filter((s: any) => {
+      if (typeof s === 'string') return true
+      return s.available !== false
+    }) || []
+
+    if (availableSizes.length > 0) {
+      setSelectedProduct(product)
+      setShowSizeDialog(true)
+    } else {
+      addToCart({
+        id: product.id,
+        productId: product.productId,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        quantity: 1
+      })
+    }
   }
 
   return (
@@ -240,6 +254,15 @@ export default function HomePage() {
 
       {/* Bottom Navigation - Mobile Only */}
       <BottomNavigation />
+      
+      <SizeSelectionDialog
+        product={selectedProduct}
+        isOpen={showSizeDialog}
+        onClose={() => {
+          setShowSizeDialog(false)
+          setSelectedProduct(null)
+        }}
+      />
     </div>
   )
 }

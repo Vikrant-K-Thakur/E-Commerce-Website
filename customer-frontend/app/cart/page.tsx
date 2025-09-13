@@ -84,7 +84,10 @@ export default function CartPage() {
         },
         body: JSON.stringify({
           email: user.email,
-          items: cartItems,
+          items: cartItems.map(item => ({
+            ...item,
+            size: item.size || 'N/A'
+          })),
           totalAmount: total,
           discountAmount: discount,
           couponId: appliedCoupon?._id

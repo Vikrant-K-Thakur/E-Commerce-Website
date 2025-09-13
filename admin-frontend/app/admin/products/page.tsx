@@ -1,112 +1,188 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Package, Plus, Download, Filter, Search, Edit, Trash2, Eye, MoreHorizontal, AlertTriangle } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Package, Plus, Download, Filter, Search, Edit, Trash2, Eye, MoreHorizontal, AlertTriangle, X } from "lucide-react"
 
-const productData = [
-  {
-    id: "PRO001",
-    name: "Voyager Tote",
-    type: "Bag",
-    price: 139.95,
-    colors: ["Black", "Navy"],
-    style: "Luxury",
-    category: "Urban",
-    barcode: "1234567890123",
-    stock: 45,
-    status: "In Stock",
-    image: "/black-tote-bag.jpg",
-  },
-  {
-    id: "PRO002",
-    name: "Timeless Chronos",
-    type: "Watch",
-    price: 299.0,
-    colors: ["Silver", "Gold"],
-    style: "Classic",
-    category: "Formal",
-    barcode: "9876543210987",
-    stock: 23,
-    status: "In Stock",
-    image: "/luxury-watch.jpg",
-  },
-  {
-    id: "PRO003",
-    name: "Stride Runner",
-    type: "Shoes",
-    price: 120.5,
-    colors: ["White", "Grey"],
-    style: "Athletic",
-    category: "Casual",
-    barcode: "1122334455668",
-    stock: 8,
-    status: "Low Stock",
-    image: "/running-shoes-on-track.png",
-  },
-  {
-    id: "PRO004",
-    name: "Lighthouse Desk Lamp",
-    type: "Lamp",
-    price: 75.0,
-    colors: ["Black", "White"],
-    style: "Minimalist",
-    category: "Modern",
-    barcode: "0098765432109",
-    stock: 67,
-    status: "In Stock",
-    image: "/modern-desk-lamp.png",
-  },
-  {
-    id: "PRO005",
-    name: "Pixel Pro Camera",
-    type: "Electronics",
-    price: 450.0,
-    colors: ["Silver", "Graphite"],
-    style: "Retro",
-    category: "Professional",
-    barcode: "2207654321098",
-    stock: 0,
-    status: "Out of Stock",
-    image: "/vintage-camera-still-life.png",
-  },
-  {
-    id: "PRO006",
-    name: "Acoustic Bliss Headphones",
-    type: "Audio",
-    price: 150.0,
-    colors: ["Red", "Blue"],
-    style: "Wireless",
-    category: "Comfort",
-    barcode: "9988776655443",
-    stock: 34,
-    status: "In Stock",
-    image: "/diverse-people-listening-headphones.png",
-  },
-]
+
 
 export default function ProductManagement() {
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<any>(null)
+  const [error, setError] = useState("")
   const itemsPerPage = 6
 
-  const filteredProducts = productData.filter((product) => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.barcode.includes(searchTerm)
-    const matchesType = filterType === "all" || product.type.toLowerCase() === filterType.toLowerCase()
-    const matchesStatus =
-      filterStatus === "all" || product.status.toLowerCase().replace(" ", "") === filterStatus.toLowerCase()
+  // Form states
+  const [formData, setFormData] = useState({
+    productId: '',
+    name: '',
+    price: '',
+    description: '',
+    image: '',
+    category: '',
+    sizes: []
+  })
+  const [availableSizes] = useState(['XS', 'S', 'M', 'L', 'XL', 'XXL'])
+  const [selectedSizes, setSelectedSizes] = useState<{size: string, available: boolean}[]>([])
 
-    return matchesSearch && matchesType && matchesStatus
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/products')
+      const data = await response.json()
+      if (data.success) {
+        setProducts(data.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddProduct = async () => {
+    try {
+      setError('')
+      
+      // Basic validation
+      if (!formData.productId || !formData.name || !formData.price) {
+        setError('Please fill in all required fields (Product ID, Name, Price)')
+        return
+      }
+      
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add',
+          ...formData,
+          sizes: selectedSizes
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        alert('Product added successfully!')
+        fetchProducts()
+        setShowAddDialog(false)
+        resetForm()
+      } else {
+        setError(data.error || 'Failed to add product')
+      }
+    } catch (error) {
+      console.error('Add product error:', error)
+      setError('Failed to add product')
+    }
+  }
+
+  const handleEditProduct = async () => {
+    try {
+      setError('')
+      
+      // Basic validation
+      if (!formData.name || !formData.price) {
+        setError('Please fill in all required fields (Name, Price)')
+        return
+      }
+      
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          id: editingProduct.id,
+          ...formData,
+          sizes: selectedSizes
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        alert('Product updated successfully!')
+        fetchProducts()
+        setShowEditDialog(false)
+        resetForm()
+      } else {
+        setError(data.error || 'Failed to update product')
+      }
+    } catch (error) {
+      console.error('Update product error:', error)
+      setError('Failed to update product')
+    }
+  }
+
+  const openEditDialog = (product: any) => {
+    setEditingProduct(product)
+    setFormData({
+      productId: product.productId || '',
+      name: product.name || '',
+      price: product.price?.toString() || '',
+      description: product.description || '',
+      image: product.image || '',
+      category: product.category || '',
+      sizes: product.sizes || []
+    })
+    setSelectedSizes(product.sizes || [])
+    setShowEditDialog(true)
+  }
+
+  const resetForm = () => {
+    setFormData({
+      productId: '',
+      name: '',
+      price: '',
+      description: '',
+      image: '',
+      category: '',
+      sizes: []
+    })
+    setSelectedSizes([])
+    setError('')
+    setEditingProduct(null)
+  }
+
+  const handleSizeToggle = (size: string, available: boolean) => {
+    setSelectedSizes(prev => {
+      const existing = prev.find(s => s.size === size)
+      if (existing) {
+        return prev.map(s => s.size === size ? { ...s, available } : s)
+      } else {
+        return [...prev, { size, available }]
+      }
+    })
+  }
+
+  const removeSizeFromSelection = (size: string) => {
+    setSelectedSizes(prev => prev.filter(s => s.size !== size))
+  }
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
+      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.productId?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesType = filterType === "all" || product.category?.toLowerCase() === filterType.toLowerCase()
+    
+    return matchesSearch && matchesType
   })
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
@@ -154,10 +230,128 @@ export default function ProductManagement() {
                 <Download className="w-4 h-4 mr-2" />
                 Export Data
               </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Product
-              </Button>
+              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                <DialogTrigger asChild>
+                  <Button className="bg-blue-600 hover:bg-blue-700" onClick={resetForm}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Product
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Add New Product</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {error && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        {error}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Product ID *</Label>
+                        <Input
+                          value={formData.productId}
+                          onChange={(e) => setFormData({...formData, productId: e.target.value})}
+                          placeholder="Enter unique product ID"
+                        />
+                      </div>
+                      <div>
+                        <Label>Product Name *</Label>
+                        <Input
+                          value={formData.name}
+                          onChange={(e) => setFormData({...formData, name: e.target.value})}
+                          placeholder="Enter product name"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Price (coins) *</Label>
+                        <Input
+                          type="number"
+                          value={formData.price}
+                          onChange={(e) => setFormData({...formData, price: e.target.value})}
+                          placeholder="Enter price in coins"
+                        />
+                      </div>
+                      <div>
+                        <Label>Category</Label>
+                        <Input
+                          value={formData.category}
+                          onChange={(e) => setFormData({...formData, category: e.target.value})}
+                          placeholder="Enter category"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        placeholder="Enter product description"
+                      />
+                    </div>
+                    <div>
+                      <Label>Image URL</Label>
+                      <Input
+                        value={formData.image}
+                        onChange={(e) => setFormData({...formData, image: e.target.value})}
+                        placeholder="Enter image URL"
+                      />
+                    </div>
+                    <div>
+                      <Label>Sizes & Availability</Label>
+                      <div className="space-y-2 mt-2">
+                        <div className="flex flex-wrap gap-2">
+                          {availableSizes.map(size => (
+                            <div key={size} className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={selectedSizes.some(s => s.size === size)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    handleSizeToggle(size, true)
+                                  } else {
+                                    removeSizeFromSelection(size)
+                                  }
+                                }}
+                              />
+                              <span className="text-sm">{size}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {selectedSizes.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">Selected Sizes:</p>
+                            {selectedSizes.map(({size, available}) => (
+                              <div key={size} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <span className="text-sm">{size}</span>
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    checked={available}
+                                    onCheckedChange={(checked) => handleSizeToggle(size, !!checked)}
+                                  />
+                                  <span className="text-xs">Available</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeSizeFromSelection(size)}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <Button onClick={handleAddProduct} className="w-full">
+                      Add Product
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardHeader>
@@ -175,27 +369,14 @@ export default function ProductManagement() {
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Types" />
+                <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="bag">Bag</SelectItem>
-                <SelectItem value="watch">Watch</SelectItem>
-                <SelectItem value="shoes">Shoes</SelectItem>
-                <SelectItem value="lamp">Lamp</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="clothing">Clothing</SelectItem>
                 <SelectItem value="electronics">Electronics</SelectItem>
-                <SelectItem value="audio">Audio</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="instock">In Stock</SelectItem>
-                <SelectItem value="lowstock">Low Stock</SelectItem>
-                <SelectItem value="outofstock">Out of Stock</SelectItem>
+                <SelectItem value="accessories">Accessories</SelectItem>
+                <SelectItem value="home">Home</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" size="icon">
@@ -211,102 +392,77 @@ export default function ProductManagement() {
                   <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">PRODUCT ID</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">IMAGE</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">PRODUCT NAME</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">TYPE</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">CATEGORY</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">PRICE</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">COLORS</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">STYLE</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">BARCODE</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">STOCK</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">SIZES</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
-                {paginatedProducts.map((product) => (
-                  <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-4 px-4">
-                      <span className="font-medium text-gray-900">{product.id}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden">
-                        <img
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="font-medium text-gray-900">{product.name}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="text-gray-600">{product.type}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="font-medium text-gray-900">${product.price.toFixed(2)}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex gap-1">
-                        {product.colors.map((color, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {color}
-                          </Badge>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <Badge variant="outline" className="text-xs">
-                        {product.style}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="text-gray-600 font-mono text-sm">{product.barcode}</span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">{product.stock}</span>
-                        {product.stock <= 10 && product.stock > 0 && (
-                          <AlertTriangle className="w-4 h-4 text-orange-500" />
-                        )}
-                        {product.stock === 0 && <AlertTriangle className="w-4 h-4 text-red-500" />}
-                      </div>
-                      <div className="mt-1">{getStatusBadge(product.status, product.stock)}</div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-700">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Duplicate Product</DropdownMenuItem>
-                            <DropdownMenuItem>Update Stock</DropdownMenuItem>
-                            <DropdownMenuItem>Add to Sale</DropdownMenuItem>
-                            <DropdownMenuItem>View Analytics</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-gray-500">
+                      Loading products...
                     </td>
                   </tr>
-                ))}
+                ) : paginatedProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-gray-500">
+                      No products found
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedProducts.map((product) => (
+                    <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-4 px-4">
+                        <span className="font-medium text-gray-900">{product.productId}</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden">
+                          <img
+                            src={product.image || "/placeholder.svg"}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="font-medium text-gray-900">{product.name}</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="text-gray-600">{product.category}</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="font-medium text-gray-900">{product.price} coins</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-wrap gap-1">
+                          {product.sizes?.map((sizeObj: any, index: number) => (
+                            <Badge 
+                              key={index} 
+                              variant={sizeObj.available ? "default" : "secondary"}
+                              className={sizeObj.available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                            >
+                              {sizeObj.size}
+                            </Badge>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => openEditDialog(product)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -357,7 +513,7 @@ export default function ProductManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Products</p>
-                <p className="text-2xl font-bold text-gray-900">{productData.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{products.length}</p>
               </div>
               <Package className="w-8 h-8 text-blue-600" />
             </div>
@@ -368,9 +524,9 @@ export default function ProductManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">In Stock</p>
+                <p className="text-sm text-gray-600">Available Sizes</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {productData.filter((p) => p.status === "In Stock").length}
+                  {products.reduce((acc, p) => acc + (p.sizes?.filter((s: any) => s.available).length || 0), 0)}
                 </p>
               </div>
               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -384,13 +540,13 @@ export default function ProductManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Low Stock</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {productData.filter((p) => p.status === "Low Stock").length}
+                <p className="text-sm text-gray-600">Unavailable Sizes</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {products.reduce((acc, p) => acc + (p.sizes?.filter((s: any) => !s.available).length || 0), 0)}
                 </p>
               </div>
-              <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-orange-600" />
+              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
             </div>
           </CardContent>
@@ -400,18 +556,136 @@ export default function ProductManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Out of Stock</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {productData.filter((p) => p.status === "Out of Stock").length}
+                <p className="text-sm text-gray-600">Categories</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {new Set(products.map(p => p.category).filter(Boolean)).size}
                 </p>
               </div>
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <Package className="w-5 h-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Product Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {error}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Product ID</Label>
+                <Input
+                  value={formData.productId}
+                  disabled
+                  className="bg-gray-100"
+                />
+              </div>
+              <div>
+                <Label>Product Name *</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  placeholder="Enter product name"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Price (coins) *</Label>
+                <Input
+                  type="number"
+                  value={formData.price}
+                  onChange={(e) => setFormData({...formData, price: e.target.value})}
+                  placeholder="Enter price in coins"
+                />
+              </div>
+              <div>
+                <Label>Category</Label>
+                <Input
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  placeholder="Enter category"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="Enter product description"
+              />
+            </div>
+            <div>
+              <Label>Image URL</Label>
+              <Input
+                value={formData.image}
+                onChange={(e) => setFormData({...formData, image: e.target.value})}
+                placeholder="Enter image URL"
+              />
+            </div>
+            <div>
+              <Label>Sizes & Availability</Label>
+              <div className="space-y-2 mt-2">
+                <div className="flex flex-wrap gap-2">
+                  {availableSizes.map(size => (
+                    <div key={size} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={selectedSizes.some(s => s.size === size)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handleSizeToggle(size, true)
+                          } else {
+                            removeSizeFromSelection(size)
+                          }
+                        }}
+                      />
+                      <span className="text-sm">{size}</span>
+                    </div>
+                  ))}
+                </div>
+                {selectedSizes.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Selected Sizes:</p>
+                    {selectedSizes.map(({size, available}) => (
+                      <div key={size} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span className="text-sm">{size}</span>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={available}
+                            onCheckedChange={(checked) => handleSizeToggle(size, !!checked)}
+                          />
+                          <span className="text-xs">Available</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSizeFromSelection(size)}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <Button onClick={handleEditProduct} className="w-full">
+              Update Product
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

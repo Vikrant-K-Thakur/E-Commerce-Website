@@ -24,10 +24,13 @@ export async function GET() {
 
     const products = await db.collection('products').find({}).toArray()
 
-    // convert MongoDB _id → id
+    // convert MongoDB _id → id and ensure all fields are properly formatted
     const formatted = products.map((p) => ({
       ...p,
       id: p._id.toString(),
+      productId: p.productId || null,
+      category: p.category || '',
+      sizes: p.sizes || [],
       _id: undefined,
     }))
 

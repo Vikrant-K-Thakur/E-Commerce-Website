@@ -1,9 +1,12 @@
 export interface Product {
   id: string
+  productId?: string
   name: string
   price: number
   description: string
   image: string
+  category?: string
+  sizes?: string[]
   created_at: Date
   updated_at: Date
 }

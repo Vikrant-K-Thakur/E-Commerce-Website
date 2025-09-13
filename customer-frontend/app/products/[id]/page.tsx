@@ -12,10 +12,13 @@ import { useWishlist } from "@/contexts/wishlist-context"
 
 interface Product {
   id: string
+  productId?: string
   name: string
   price: number
   description: string
   image: string
+  category?: string
+  sizes?: any[]
 }
 
 const reviews = [
@@ -45,6 +48,7 @@ const reviews = [
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const [product, setProduct] = useState<Product | null>(null)
   const [quantity, setQuantity] = useState(1)
+  const [selectedSize, setSelectedSize] = useState<string>("")
   const { addItem } = useCart()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
 
@@ -59,15 +63,27 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   }
 
   const handleAddToCart = () => {
-    if (product) {
-      for (let i = 0; i < quantity; i++) {
-        addItem({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          image: product.image
-        })
-      }
+    if (!product) return
+    
+    const availableSizes = product.sizes?.filter((s: any) => {
+      if (typeof s === 'string') return true
+      return s.available !== false
+    }) || []
+
+    if (availableSizes.length > 0 && !selectedSize) {
+      alert("Please select a size")
+      return
+    }
+
+    for (let i = 0; i < quantity; i++) {
+      addItem({
+        id: product.id,
+        productId: product.productId,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        size: selectedSize || undefined
+      })
     }
   }
 
@@ -171,6 +187,50 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           </div>
         </div>
 
+        {/* Product Details */}
+        {product.category && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-foreground">Category</h3>
+            <Badge variant="outline">{product.category}</Badge>
+          </div>
+        )}
+
+        {product.sizes && product.sizes.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-foreground">Select Size</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {product.sizes
+                .filter((s: any) => {
+                  if (typeof s === 'string') return true
+                  return s.available !== false
+                })
+                .map((sizeObj: any, index: number) => {
+                  const sizeValue = typeof sizeObj === 'string' ? sizeObj : sizeObj.size || sizeObj
+                  return (
+                    <Button
+                      key={index}
+                      variant={selectedSize === sizeValue ? "default" : "outline"}
+                      className="h-10"
+                      onClick={() => setSelectedSize(sizeValue)}
+                    >
+                      {sizeValue}
+                    </Button>
+                  )
+                })
+              }
+            </div>
+          </div>
+        )}
+
+        {product.productId && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-foreground">Product ID</h3>
+            <Badge variant="secondary" className="font-mono text-xs">
+              {product.productId}
+            </Badge>
+          </div>
+        )}
+
         {/* Description */}
         <div className="space-y-3">
           <h3 className="font-semibold text-foreground">Description</h3>
@@ -187,6 +247,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             variant="outline" 
             className="flex-1 bg-transparent"
             onClick={handleAddToCart}
+            disabled={product?.sizes?.length > 0 && !selectedSize}
           >
             Add to Cart
           </Button>

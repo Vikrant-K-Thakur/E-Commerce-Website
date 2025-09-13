@@ -9,19 +9,24 @@ import { AuthGuard } from "@/components/auth-guard"
 import { getProducts } from "@/lib/products"
 import { useCart } from "@/contexts/cart-context"
 import { useWishlist } from "@/contexts/wishlist-context"
+import { SizeSelectionDialog } from "@/components/size-selection-dialog"
 
 interface Product {
   id: string
+  productId?: string
   name: string
   price: number
   description: string
   image: string
+  sizes?: any[]
 }
 
 export function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([])
   const { addItem } = useCart()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [showSizeDialog, setShowSizeDialog] = useState(false)
 
   useEffect(() => {
     fetchProducts()
@@ -33,12 +38,23 @@ export function FeaturedProducts() {
   }
 
   const handleAddToCart = (product: Product) => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image
-    })
+    const availableSizes = product.sizes?.filter((s: any) => {
+      if (typeof s === 'string') return true
+      return s.available !== false
+    }) || []
+
+    if (availableSizes.length > 0) {
+      setSelectedProduct(product)
+      setShowSizeDialog(true)
+    } else {
+      addItem({
+        id: product.id,
+        productId: product.productId,
+        name: product.name,
+        price: product.price,
+        image: product.image
+      })
+    }
   }
 
   const handleWishlistToggle = (product: Product) => {
@@ -55,55 +71,64 @@ export function FeaturedProducts() {
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {products.map((product) => (
-        <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-card border-border/50">
-          <div className="relative">
-            <Link href={`/products/${product.id}`}>
-              <img
-                src={product.image || "/placeholder.svg"}
-                alt={product.name}
-                className="w-full h-40 sm:h-48 object-cover"
-              />
-            </Link>
-            <AuthGuard>
-              <button 
-                className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background/90 transition-colors"
-                onClick={() => handleWishlistToggle(product)}
-              >
-                <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? 'text-red-500 fill-red-500' : 'text-muted-foreground'}`} />
-              </button>
-            </AuthGuard>
+    <>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {products.map((product) => (
+          <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-card border-border/50">
+            <div className="relative">
+              <Link href={`/products/${product.id}`}>
+                <img
+                  src={product.image || "/placeholder.svg"}
+                  alt={product.name}
+                  className="w-full h-40 sm:h-48 object-cover"
+                />
+              </Link>
+              <AuthGuard>
+                <button 
+                  className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background/90 transition-colors"
+                  onClick={() => handleWishlistToggle(product)}
+                >
+                  <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? 'text-red-500 fill-red-500' : 'text-muted-foreground'}`} />
+                </button>
+              </AuthGuard>
+            </div>
+            <CardContent className="p-3 space-y-2">
+              <div className="space-y-1">
+                <h3 className="font-medium text-sm text-foreground line-clamp-2 text-balance">{product.name}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-foreground">{product.price} coins</span>
+              </div>
+
+              <AuthGuard>
+                <Button
+                  size="sm"
+                  className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                  onClick={() => handleAddToCart(product)}
+                >
+                  Add to Cart
+                </Button>
+              </AuthGuard>
+            </CardContent>
+          </Card>
+        ))}
+        {products.length === 0 && (
+          <div className="col-span-full text-center py-8 text-muted-foreground">
+            No products available. Admin can add products from the admin panel.
           </div>
-          <CardContent className="p-3 space-y-2">
-            <div className="space-y-1">
-              <h3 className="font-medium text-sm text-foreground line-clamp-2 text-balance">{product.name}</h3>
-              <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
-            </div>
-
-
-
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-foreground">${product.price}</span>
-            </div>
-
-            <AuthGuard>
-              <Button
-                size="sm"
-                className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                onClick={() => handleAddToCart(product)}
-              >
-                Add to Cart
-              </Button>
-            </AuthGuard>
-          </CardContent>
-        </Card>
-      ))}
-      {products.length === 0 && (
-        <div className="col-span-full text-center py-8 text-muted-foreground">
-          No products available. Admin can add products from the admin panel.
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+      
+      <SizeSelectionDialog
+        product={selectedProduct}
+        isOpen={showSizeDialog}
+        onClose={() => {
+          setShowSizeDialog(false)
+          setSelectedProduct(null)
+        }}
+      />
+    </>
   )
 }
