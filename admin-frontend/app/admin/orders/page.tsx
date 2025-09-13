@@ -478,6 +478,7 @@ export default function OrderManagement() {
                                               <div className="flex-1">
                                                 <p className="font-medium text-gray-900">{item.name}</p>
                                                 <p className="text-sm text-gray-600">
+                                                  {item.productId && `Product ID: ${item.productId} | `}
                                                   {item.size && `Size: ${item.size} | `}
                                                   Qty: {item.quantity} | Price: {item.price} coins
                                                 </p>

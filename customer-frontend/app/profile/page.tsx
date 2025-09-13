@@ -28,11 +28,22 @@ export default function ProfilePage() {
   const { user, logout } = useAuth()
   const [coinBalance, setCoinBalance] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [notificationCount, setNotificationCount] = useState(0)
 
   useEffect(() => {
     if (user?.email) {
       fetchWalletData()
+      fetchNotificationCount()
     }
+    
+    const handleNotificationUpdate = () => {
+      if (user?.email) {
+        fetchNotificationCount()
+      }
+    }
+    
+    window.addEventListener('notificationUpdate', handleNotificationUpdate)
+    return () => window.removeEventListener('notificationUpdate', handleNotificationUpdate)
   }, [user?.email])
 
   const fetchWalletData = async () => {
@@ -48,6 +59,21 @@ export default function ProfilePage() {
       console.error('Failed to fetch wallet data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchNotificationCount = async () => {
+    if (!user?.email) return
+    
+    try {
+      const response = await fetch(`/api/notifications?email=${user.email}`)
+      const result = await response.json()
+      if (result.success) {
+        const unreadCount = result.data.filter((notification: any) => !notification.read).length
+        setNotificationCount(unreadCount)
+      }
+    } catch (error) {
+      console.error('Failed to fetch notification count:', error)
     }
   }
 
@@ -68,7 +94,11 @@ export default function ProfilePage() {
           <Link href="/notifications">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></span>
+              {notificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-medium">
+                  {notificationCount > 9 ? '9+' : notificationCount}
+                </span>
+              )}
             </Button>
           </Link>
         </div>

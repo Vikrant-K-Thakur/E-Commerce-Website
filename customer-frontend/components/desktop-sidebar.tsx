@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +11,7 @@ import { AuthGuard } from "@/components/auth-guard"
 import { cn } from "@/lib/utils"
 import { useCart } from "@/contexts/cart-context"
 import { useWishlist } from "@/contexts/wishlist-context"
+import { useAuth } from "@/contexts/auth-context"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
@@ -21,13 +23,45 @@ const baseUserNavigation = [
   { name: "Wishlist", href: "/wishlist", icon: Heart, type: "wishlist" },
   { name: "Profile", href: "/profile", icon: User },
   { name: "Rewards", href: "/rewards", icon: Star },
-  { name: "Notifications", href: "/notifications", icon: Bell, badge: "2" },
+  { name: "Notifications", href: "/notifications", icon: Bell, type: "notifications" },
 ]
 
 export function DesktopSidebar() {
   const pathname = usePathname()
+  const { user } = useAuth()
   const { totalItems: cartCount } = useCart()
   const { items: wishlistItems } = useWishlist()
+  const [notificationCount, setNotificationCount] = useState(0)
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchNotificationCount()
+    }
+    
+    const handleNotificationUpdate = () => {
+      if (user?.email) {
+        fetchNotificationCount()
+      }
+    }
+    
+    window.addEventListener('notificationUpdate', handleNotificationUpdate)
+    return () => window.removeEventListener('notificationUpdate', handleNotificationUpdate)
+  }, [user?.email])
+
+  const fetchNotificationCount = async () => {
+    if (!user?.email) return
+    
+    try {
+      const response = await fetch(`/api/notifications?email=${user.email}`)
+      const result = await response.json()
+      if (result.success) {
+        const unreadCount = result.data.filter((notification: any) => !notification.read).length
+        setNotificationCount(unreadCount)
+      }
+    } catch (error) {
+      console.error('Failed to fetch notification count:', error)
+    }
+  }
 
   const userNavigation = baseUserNavigation.map(item => {
     if (item.type === "cart" && cartCount > 0) {
@@ -35,6 +69,9 @@ export function DesktopSidebar() {
     }
     if (item.type === "wishlist" && wishlistItems.length > 0) {
       return { ...item, badge: wishlistItems.length.toString() }
+    }
+    if (item.type === "notifications" && notificationCount > 0) {
+      return { ...item, badge: notificationCount > 9 ? '9+' : notificationCount.toString() }
     }
     return item
   })

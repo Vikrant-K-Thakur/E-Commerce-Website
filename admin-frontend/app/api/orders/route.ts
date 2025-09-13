@@ -75,6 +75,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'updateStatus') {
+      // Get order details for notification
+      const order = await db.collection('orders').findOne({ orderId: data.orderId })
+      
       await db.collection('orders').updateOne(
         { orderId: data.orderId },
         {
@@ -85,6 +88,22 @@ export async function POST(request: NextRequest) {
           }
         }
       )
+
+      // Create notification for customer
+      if (order?.customerEmail) {
+        const notification = {
+          customerEmail: order.customerEmail,
+          title: `Order ${data.status}`,
+          message: `Your order ${data.orderId} has been ${data.status.toLowerCase()}${data.trackingId ? `. Tracking ID: ${data.trackingId}` : '.'}`,
+          type: 'order',
+          orderId: data.orderId,
+          read: false,
+          created_at: new Date(),
+          time: new Date().toLocaleString()
+        }
+        
+        await db.collection('notifications').insertOne(notification)
+      }
     }
 
     return NextResponse.json({ success: true })

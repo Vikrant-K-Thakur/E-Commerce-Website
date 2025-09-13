@@ -11,12 +11,23 @@ import { useAuth } from "@/contexts/auth-context"
 export function SearchBar() {
   const [searchQuery, setSearchQuery] = useState("")
   const [rewardCount, setRewardCount] = useState(0)
+  const [notificationCount, setNotificationCount] = useState(0)
   const { user } = useAuth()
 
   useEffect(() => {
     if (user?.email) {
       fetchRewardCount()
+      fetchNotificationCount()
     }
+    
+    const handleNotificationUpdate = () => {
+      if (user?.email) {
+        fetchNotificationCount()
+      }
+    }
+    
+    window.addEventListener('notificationUpdate', handleNotificationUpdate)
+    return () => window.removeEventListener('notificationUpdate', handleNotificationUpdate)
   }, [user?.email])
 
   const fetchRewardCount = async () => {
@@ -31,6 +42,21 @@ export function SearchBar() {
       }
     } catch (error) {
       console.error('Failed to fetch reward count:', error)
+    }
+  }
+
+  const fetchNotificationCount = async () => {
+    if (!user?.email) return
+    
+    try {
+      const response = await fetch(`/api/notifications?email=${user.email}`)
+      const result = await response.json()
+      if (result.success) {
+        const unreadCount = result.data.filter((notification: any) => !notification.read).length
+        setNotificationCount(unreadCount)
+      }
+    } catch (error) {
+      console.error('Failed to fetch notification count:', error)
     }
   }
 
@@ -74,7 +100,11 @@ export function SearchBar() {
         <Link href="/notifications">
           <Button variant="ghost" size="icon" className="shrink-0 relative">
             <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></span>
+            {notificationCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {notificationCount > 9 ? '9+' : notificationCount}
+              </span>
+            )}
           </Button>
         </Link>
       </AuthGuard>

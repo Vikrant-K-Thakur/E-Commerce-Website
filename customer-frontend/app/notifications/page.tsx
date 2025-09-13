@@ -1,31 +1,79 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowLeft, Bell, Package, Gift, Percent, Users, Settings, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-const notifications: any[] = []
+import { useAuth } from "@/contexts/auth-context"
 
 export default function NotificationsPage() {
-  const [notificationList, setNotificationList] = useState(notifications)
+  const { user } = useAuth()
+  const [notificationList, setNotificationList] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState("new")
+  const [loading, setLoading] = useState(true)
 
-  const markAsRead = (id: number) => {
-    setNotificationList((notifications) =>
-      notifications.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)),
-    )
+  useEffect(() => {
+    if (user?.email) {
+      fetchNotifications()
+    }
+  }, [user?.email])
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/notifications?email=${user?.email}`)
+      const result = await response.json()
+      if (result.success) {
+        setNotificationList(result.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const deleteNotification = (id: number) => {
-    setNotificationList((notifications) => notifications.filter((notif) => notif.id !== id))
+  const markAsRead = async (id: string) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markRead', notificationId: id })
+      })
+      
+      setNotificationList((notifications) =>
+        notifications.map((notif) => (notif._id === id ? { ...notif, read: true } : notif)),
+      )
+      
+      // Trigger a page reload to update counts in other components
+      window.dispatchEvent(new Event('notificationUpdate'))
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error)
+    }
   }
 
-  const markAllAsRead = () => {
-    setNotificationList((notifications) => notifications.map((notif) => ({ ...notif, read: true })))
+  const deleteNotification = (id: string) => {
+    setNotificationList((notifications) => notifications.filter((notif) => notif._id !== id))
+  }
+
+  const markAllAsRead = async () => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markAllRead', email: user?.email })
+      })
+      
+      setNotificationList((notifications) => notifications.map((notif) => ({ ...notif, read: true })))
+      
+      // Trigger a page reload to update counts in other components
+      window.dispatchEvent(new Event('notificationUpdate'))
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error)
+    }
   }
 
   const filteredNotifications = notificationList.filter((notif) => {
@@ -82,30 +130,29 @@ export default function NotificationsPage() {
           </TabsList>
 
           <TabsContent value={activeTab} className="space-y-3 mt-4">
-            {filteredNotifications.length > 0 ? (
+            {loading ? (
+              <div className="text-center py-12">
+                <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
+                <p className="text-muted-foreground">Loading notifications...</p>
+              </div>
+            ) : filteredNotifications.length > 0 ? (
               filteredNotifications.map((notification) => {
-                const IconComponent = notification.icon
+                const IconComponent = notification.type === 'order' ? Package : Bell
                 return (
                   <Card
-                    key={notification.id}
+                    key={notification._id}
                     className={`cursor-pointer transition-colors ${
                       !notification.read ? "bg-secondary/5 border-secondary/20" : ""
                     }`}
-                    onClick={() => markAsRead(notification.id)}
+                    onClick={() => markAsRead(notification._id)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         <div
                           className={`p-2 rounded-full ${
-                            notification.type === "sale"
-                              ? "bg-red-100 text-red-600"
-                              : notification.type === "order"
-                                ? "bg-blue-100 text-blue-600"
-                                : notification.type === "loyalty"
-                                  ? "bg-primary/20 text-primary"
-                                  : notification.type === "referral"
-                                    ? "bg-green-100 text-green-600"
-                                    : "bg-muted text-muted-foreground"
+                            notification.type === "order"
+                              ? "bg-blue-100 text-blue-600"
+                              : "bg-muted text-muted-foreground"
                           }`}
                         >
                           <IconComponent className="w-4 h-4" />
@@ -126,7 +173,7 @@ export default function NotificationsPage() {
                               className="h-6 w-6 text-muted-foreground hover:text-destructive"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                deleteNotification(notification.id)
+                                deleteNotification(notification._id)
                               }}
                             >
                               <Trash2 className="w-3 h-3" />

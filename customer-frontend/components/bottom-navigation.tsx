@@ -23,33 +23,42 @@ export function BottomNavigation() {
   const { user } = useAuth()
   const { totalItems: cartCount } = useCart()
   const { items: wishlistItems } = useWishlist()
-  const [rewardCount, setRewardCount] = useState(0)
+  const [notificationCount, setNotificationCount] = useState(0)
 
   useEffect(() => {
     if (user?.email) {
-      fetchRewardCount()
+      fetchNotificationCount()
     }
+    
+    const handleNotificationUpdate = () => {
+      if (user?.email) {
+        fetchNotificationCount()
+      }
+    }
+    
+    window.addEventListener('notificationUpdate', handleNotificationUpdate)
+    return () => window.removeEventListener('notificationUpdate', handleNotificationUpdate)
   }, [user?.email])
 
-  const fetchRewardCount = async () => {
+  const fetchNotificationCount = async () => {
     if (!user?.email) return
     
     try {
-      const response = await fetch(`/api/rewards?email=${user.email}`)
+      const response = await fetch(`/api/notifications?email=${user.email}`)
       const result = await response.json()
       if (result.success) {
-        const unreadCount = result.data.filter((reward: any) => !reward.isRead).length
-        setRewardCount(unreadCount)
+        const unreadCount = result.data.filter((notification: any) => !notification.read).length
+        setNotificationCount(unreadCount)
       }
     } catch (error) {
-      console.error('Failed to fetch reward count:', error)
+      console.error('Failed to fetch notification count:', error)
     }
   }
 
   const getItemCount = (href: string) => {
     if (href === "/cart") return cartCount
     if (href === "/wishlist") return wishlistItems.length
-    if (href === "/profile") return rewardCount
+    if (href === "/profile") return notificationCount
     return 0
   }
 
