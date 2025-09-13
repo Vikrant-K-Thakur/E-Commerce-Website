@@ -49,15 +49,82 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, items, totalAmount, discountAmount, couponId } = await request.json()
+    const { action, email, items, totalAmount, discountAmount, couponId, orderId, refundAmount } = await request.json()
     
-    if (!email || !items || !totalAmount) {
-      return NextResponse.json({ success: false, error: 'Missing required fields' })
-    }
-
     const db = await connectDB()
     if (!db) {
       return NextResponse.json({ success: false, error: 'Database connection failed' })
+    }
+
+    // Handle order cancellation
+    if (action === 'cancel') {
+      if (!email || !orderId || !refundAmount) {
+        return NextResponse.json({ success: false, error: 'Missing required fields for cancellation' })
+      }
+
+      // Check if order is already cancelled
+      const existingOrder = await db.collection('orders').findOne({ orderId, customerEmail: email })
+      if (!existingOrder) {
+        return NextResponse.json({ success: false, error: 'Order not found' })
+      }
+      if (existingOrder.status === 'cancelled') {
+        return NextResponse.json({ success: false, error: 'Order is already cancelled' })
+      }
+
+      // Update order status to cancelled
+      await db.collection('orders').updateOne(
+        { orderId, customerEmail: email },
+        { $set: { status: 'cancelled', updated_at: new Date() } }
+      )
+
+      // Refund amount to customer wallet
+      await db.collection('customers').updateOne(
+        { email },
+        { 
+          $inc: { coinBalance: refundAmount },
+          $set: { updated_at: new Date() }
+        }
+      )
+
+      // Create refund transaction record
+      const transaction = {
+        id: new Date().getTime().toString(),
+        email,
+        type: 'credit',
+        description: `Order Cancellation Refund - ${orderId}`,
+        amount: refundAmount,
+        coins: refundAmount,
+        paymentMethod: 'wallet',
+        status: 'completed',
+        orderId,
+        created_at: new Date(),
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      }
+
+      await db.collection('transactions').insertOne(transaction)
+
+      // Create notification for customer
+      const notification = {
+        customerEmail: email,
+        title: 'Order Cancelled',
+        message: `Your order ${orderId} has been cancelled and ${refundAmount} coins have been refunded to your wallet.`,
+        type: 'order',
+        orderId,
+        read: false,
+        created_at: new Date(),
+        time: new Date().toLocaleString()
+      }
+      
+      await db.collection('notifications').insertOne(notification)
+
+      return NextResponse.json({ success: true, message: 'Order cancelled and refund processed' })
+    }
+    
+    // Original order creation logic
+    
+    if (!email || !items || !totalAmount) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' })
     }
 
     // Check wallet balance
@@ -74,9 +141,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order
-    const orderId = 'ORD' + new Date().getTime()
+    const newOrderId = 'ORD' + new Date().getTime()
     const order = {
-      orderId,
+      orderId: newOrderId,
       customerEmail: email,
       items,
       subtotal: items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0),
@@ -106,12 +173,12 @@ export async function POST(request: NextRequest) {
       id: new Date().getTime().toString(),
       email,
       type: 'debit',
-      description: `Order Payment - ${orderId}`,
+      description: `Order Payment - ${newOrderId}`,
       amount: totalAmount,
       coins: -totalAmount,
       paymentMethod: 'wallet',
       status: 'completed',
-      orderId,
+      orderId: newOrderId,
       created_at: new Date(),
       date: new Date().toISOString().split('T')[0],
       time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
@@ -136,7 +203,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       message: 'Order placed successfully',
-      orderId,
+      orderId: newOrderId,
       newBalance: currentBalance - totalAmount
     })
   } catch (error) {

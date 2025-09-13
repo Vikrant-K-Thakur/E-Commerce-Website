@@ -108,6 +108,34 @@ export default function OrderManagement() {
     }
   }
 
+  const cancelOrderAdmin = async (orderId: string) => {
+    if (!confirm('Are you sure you want to cancel this order? The amount will be refunded to the customer.')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'cancelOrder',
+          orderId
+        })
+      })
+
+      const result = await response.json()
+      if (result.success) {
+        alert('Order cancelled successfully! Amount refunded to customer.')
+        fetchOrders()
+      } else {
+        alert('Failed to cancel order: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Failed to cancel order:', error)
+      alert('Failed to cancel order. Please try again.')
+    }
+  }
+
   const downloadReceipt = (period: string) => {
     const now = new Date()
     let filteredOrders = orders
@@ -545,6 +573,17 @@ export default function OrderManagement() {
                                 </div>
                               </DialogContent>
                             </Dialog>
+                            
+                            {(order.status !== 'cancelled' && order.status !== 'delivered') && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => cancelOrderAdmin(order.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Cancel
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

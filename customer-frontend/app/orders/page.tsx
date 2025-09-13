@@ -70,6 +70,38 @@ export default function OrdersPage() {
     }
   }
 
+  const cancelOrder = async (orderId: string, totalAmount: number) => {
+    if (!confirm('Are you sure you want to cancel this order? The amount will be refunded to your wallet.')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'cancel',
+          orderId,
+          email: user?.email,
+          refundAmount: totalAmount
+        })
+      })
+
+      const result = await response.json()
+      if (result.success) {
+        alert('Order cancelled successfully! Amount refunded to your wallet.')
+        fetchOrders()
+        window.dispatchEvent(new Event('notificationUpdate'))
+        window.dispatchEvent(new Event('walletUpdate'))
+      } else {
+        alert('Failed to cancel order: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Failed to cancel order:', error)
+      alert('Failed to cancel order. Please try again.')
+    }
+  }
+
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.orderId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -166,6 +198,20 @@ export default function OrdersPage() {
                       <div className="text-sm text-muted-foreground">Payment: Wallet</div>
                       <div className="font-semibold">Total: {order.totalAmount} coins</div>
                     </div>
+
+                    {/* Cancel Order Button */}
+                    {(order.status === 'confirmed' || order.status === 'processing') && (
+                      <div className="pt-2">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => cancelOrder(order.orderId, order.totalAmount)}
+                          className="w-full"
+                        >
+                          Cancel Order
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))

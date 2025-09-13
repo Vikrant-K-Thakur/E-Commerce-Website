@@ -22,6 +22,15 @@ export default function WalletPage() {
     if (user?.email) {
       fetchWalletData()
     }
+    
+    const handleWalletUpdate = () => {
+      if (user?.email) {
+        fetchWalletData()
+      }
+    }
+    
+    window.addEventListener('walletUpdate', handleWalletUpdate)
+    return () => window.removeEventListener('walletUpdate', handleWalletUpdate)
   }, [user?.email])
 
   const fetchWalletData = async () => {

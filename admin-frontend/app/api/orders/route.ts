@@ -74,6 +74,68 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database connection failed' })
     }
 
+    if (action === 'cancelOrder') {
+      // Get order details
+      const order = await db.collection('orders').findOne({ orderId: data.orderId })
+      
+      if (!order) {
+        return NextResponse.json({ success: false, error: 'Order not found' })
+      }
+      
+      if (order.status === 'cancelled') {
+        return NextResponse.json({ success: false, error: 'Order is already cancelled' })
+      }
+
+      // Update order status to cancelled
+      await db.collection('orders').updateOne(
+        { orderId: data.orderId },
+        { $set: { status: 'cancelled', updated_at: new Date() } }
+      )
+
+      // Refund amount to customer wallet
+      await db.collection('customers').updateOne(
+        { email: order.customerEmail },
+        { 
+          $inc: { coinBalance: order.totalAmount },
+          $set: { updated_at: new Date() }
+        }
+      )
+
+      // Create refund transaction record
+      const transaction = {
+        id: new Date().getTime().toString(),
+        email: order.customerEmail,
+        type: 'credit',
+        description: `Admin Order Cancellation Refund - ${data.orderId}`,
+        amount: order.totalAmount,
+        coins: order.totalAmount,
+        paymentMethod: 'wallet',
+        status: 'completed',
+        orderId: data.orderId,
+        created_at: new Date(),
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      }
+
+      await db.collection('transactions').insertOne(transaction)
+
+      // Create notification for customer
+      const notification = {
+        customerEmail: order.customerEmail,
+        title: 'Order Cancelled',
+        message: `Your order ${data.orderId} has been cancelled by admin and ${order.totalAmount} coins have been refunded to your wallet.`,
+        type: 'order',
+        orderId: data.orderId,
+        read: false,
+        created_at: new Date(),
+        time: new Date().toLocaleString()
+      }
+      
+      await db.collection('notifications').insertOne(notification)
+
+      return NextResponse.json({ success: true })
+    }
+
     if (action === 'updateStatus') {
       // Get order details for notification
       const order = await db.collection('orders').findOne({ orderId: data.orderId })

@@ -42,8 +42,18 @@ export default function ProfilePage() {
       }
     }
     
+    const handleWalletUpdate = () => {
+      if (user?.email) {
+        fetchWalletData()
+      }
+    }
+    
     window.addEventListener('notificationUpdate', handleNotificationUpdate)
-    return () => window.removeEventListener('notificationUpdate', handleNotificationUpdate)
+    window.addEventListener('walletUpdate', handleWalletUpdate)
+    return () => {
+      window.removeEventListener('notificationUpdate', handleNotificationUpdate)
+      window.removeEventListener('walletUpdate', handleWalletUpdate)
+    }
   }, [user?.email])
 
   const fetchWalletData = async () => {
