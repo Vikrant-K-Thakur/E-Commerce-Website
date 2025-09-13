@@ -32,8 +32,16 @@ interface Order {
   id: string
   customer: string
   customerEmail: string
+  customerPhone: string
+  customerAddress: string
+  customerCoinBalance: number
+  customerJoinDate: string
   orderDate: string
+  orderTime: string
   total: number
+  subtotal: number
+  discountAmount: number
+  paymentMethod: string
   status: string
   trackingId: string | null
   items: any[]
@@ -309,6 +317,7 @@ export default function OrderManagement() {
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER ID</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">CUSTOMER</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">EMAIL</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">PHONE</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER DATE</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">TOTAL</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">STATUS</th>
@@ -318,7 +327,7 @@ export default function OrderManagement() {
                 <tbody>
                   {paginatedOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-gray-500">
+                      <td colSpan={8} className="py-12 text-center text-gray-500">
                         No orders found
                       </td>
                     </tr>
@@ -326,19 +335,39 @@ export default function OrderManagement() {
                     paginatedOrders.map((order) => (
                       <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-4 px-4">
-                          <span className="font-medium text-gray-900">{order.id}</span>
+                          <span className="font-medium text-blue-600">{order.id}</span>
                         </td>
                         <td className="py-4 px-4">
-                          <span className="text-gray-900">{order.customer}</span>
+                          <div>
+                            <span className="text-gray-900 font-medium">{order.customer}</span>
+                            {order.customerCoinBalance > 0 && (
+                              <div className="text-xs text-green-600">
+                                Balance: {order.customerCoinBalance.toFixed(2)} coins
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="py-4 px-4">
                           <span className="text-gray-600">{order.customerEmail}</span>
                         </td>
                         <td className="py-4 px-4">
-                          <span className="text-gray-600">{order.orderDate}</span>
+                          <span className="text-gray-600">{order.customerPhone || 'N/A'}</span>
                         </td>
                         <td className="py-4 px-4">
-                          <span className="font-medium text-gray-900">{order.total.toFixed(2)} coins</span>
+                          <div>
+                            <span className="text-gray-600">{order.orderDate}</span>
+                            <div className="text-xs text-gray-500">{order.orderTime}</div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div>
+                            <span className="font-medium text-gray-900">{order.total.toFixed(2)} coins</span>
+                            {order.discountAmount > 0 && (
+                              <div className="text-xs text-red-600">
+                                Discount: -{order.discountAmount.toFixed(2)}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="py-4 px-4">{getStatusBadge(order.status)}</td>
                         <td className="py-4 px-4">
@@ -359,37 +388,108 @@ export default function OrderManagement() {
                                   <DialogTitle>Order Details - {selectedOrder?.id}</DialogTitle>
                                 </DialogHeader>
                                 {selectedOrder && (
-                                  <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <Label>Customer</Label>
-                                        <p className="font-medium">{selectedOrder.customer}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Email</Label>
-                                        <p>{selectedOrder.customerEmail}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Order Date</Label>
-                                        <p>{selectedOrder.orderDate}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Total</Label>
-                                        <p className="font-medium">{selectedOrder.total.toFixed(2)} coins</p>
-                                      </div>
-                                      <div>
-                                        <Label>Status</Label>
-                                        <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
-                                      </div>
-                                      <div>
-                                        <Label>Tracking ID</Label>
-                                        <p>{selectedOrder.trackingId || 'Not assigned'}</p>
-                                      </div>
-                                    </div>
+                                  <div className="space-y-6">
+                                    {/* Customer Details Section */}
                                     <div>
-                                      <Label>Address</Label>
-                                      <p>{selectedOrder.address || 'No address provided'}</p>
+                                      <h3 className="text-lg font-semibold mb-3 text-blue-600">Customer Details</h3>
+                                      <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Name</Label>
+                                          <p className="font-medium text-gray-900">{selectedOrder.customer}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Email</Label>
+                                          <p className="text-gray-900">{selectedOrder.customerEmail}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                                          <p className="text-gray-900">{selectedOrder.customerPhone || 'Not provided'}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Wallet Balance</Label>
+                                          <p className="font-medium text-green-600">{selectedOrder.customerCoinBalance.toFixed(2)} coins</p>
+                                        </div>
+                                        <div className="col-span-2">
+                                          <Label className="text-sm font-medium text-gray-600">Address</Label>
+                                          <p className="text-gray-900">{selectedOrder.customerAddress || 'No address provided'}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Customer Since</Label>
+                                          <p className="text-gray-900">{selectedOrder.customerJoinDate || 'Unknown'}</p>
+                                        </div>
+                                      </div>
                                     </div>
+
+                                    {/* Order Details Section */}
+                                    <div>
+                                      <h3 className="text-lg font-semibold mb-3 text-green-600">Order Details</h3>
+                                      <div className="grid grid-cols-2 gap-4 p-4 bg-green-50 rounded-lg">
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Order ID</Label>
+                                          <p className="font-medium text-gray-900">{selectedOrder.id}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Order Date</Label>
+                                          <p className="text-gray-900">{selectedOrder.orderDate}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Order Time</Label>
+                                          <p className="text-gray-900">{selectedOrder.orderTime}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Payment Method</Label>
+                                          <p className="text-gray-900 capitalize">{selectedOrder.paymentMethod}</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Subtotal</Label>
+                                          <p className="text-gray-900">{selectedOrder.subtotal.toFixed(2)} coins</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Discount</Label>
+                                          <p className="text-red-600">-{selectedOrder.discountAmount.toFixed(2)} coins</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Total Amount</Label>
+                                          <p className="font-bold text-lg text-gray-900">{selectedOrder.total.toFixed(2)} coins</p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium text-gray-600">Status</Label>
+                                          <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
+                                        </div>
+                                        <div className="col-span-2">
+                                          <Label className="text-sm font-medium text-gray-600">Tracking ID</Label>
+                                          <p className="text-gray-900">{selectedOrder.trackingId || 'Not assigned'}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Order Items Section */}
+                                    {selectedOrder.items && selectedOrder.items.length > 0 && (
+                                      <div>
+                                        <h3 className="text-lg font-semibold mb-3 text-purple-600">Order Items</h3>
+                                        <div className="space-y-2">
+                                          {selectedOrder.items.map((item: any, index: number) => (
+                                            <div key={index} className="flex items-center gap-4 p-3 bg-purple-50 rounded-lg">
+                                              <img
+                                                src={item.image || '/placeholder.svg'}
+                                                alt={item.name}
+                                                className="w-12 h-12 object-cover rounded"
+                                              />
+                                              <div className="flex-1">
+                                                <p className="font-medium text-gray-900">{item.name}</p>
+                                                <p className="text-sm text-gray-600">
+                                                  {item.size && `Size: ${item.size} | `}
+                                                  Qty: {item.quantity} | Price: {item.price} coins
+                                                </p>
+                                              </div>
+                                              <p className="font-medium text-gray-900">
+                                                {(item.price * item.quantity).toFixed(2)} coins
+                                              </p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </DialogContent>

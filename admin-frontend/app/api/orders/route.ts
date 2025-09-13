@@ -26,19 +26,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database connection failed' })
     }
 
-    const orders = await db.collection('orders').find({}).sort({ orderDate: -1 }).toArray()
+    const orders = await db.collection('orders').find({}).sort({ created_at: -1 }).toArray()
     
-    const transformedOrders = orders.map(order => ({
-      id: order.orderId || order._id.toString(),
-      customer: order.customer || 'Unknown Customer',
-      customerEmail: order.customerEmail || '',
-      orderDate: order.date || new Date(order.created_at).toISOString().split('T')[0],
-      total: order.totalAmount || 0,
-      status: order.status || 'Pending',
-      trackingId: order.trackingId || null,
-      items: order.items || [],
-      address: order.address || ''
-    }))
+    // Get customer details for each order
+    const transformedOrders = await Promise.all(
+      orders.map(async (order) => {
+        let customerDetails = null
+        if (order.customerEmail) {
+          customerDetails = await db.collection('customers').findOne({ email: order.customerEmail })
+        }
+        
+        return {
+          id: order.orderId || order._id.toString(),
+          customer: customerDetails?.name || 'Unknown Customer',
+          customerEmail: order.customerEmail || '',
+          customerPhone: customerDetails?.phone || '',
+          customerAddress: customerDetails?.address || '',
+          customerCoinBalance: customerDetails?.coinBalance || 0,
+          customerJoinDate: customerDetails?.created_at ? new Date(customerDetails.created_at).toISOString().split('T')[0] : '',
+          orderDate: order.date || new Date(order.created_at).toISOString().split('T')[0],
+          orderTime: order.time || new Date(order.created_at).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+          total: order.totalAmount || 0,
+          subtotal: order.subtotal || 0,
+          discountAmount: order.discountAmount || 0,
+          paymentMethod: order.paymentMethod || 'wallet',
+          status: order.status || 'confirmed',
+          trackingId: order.trackingId || null,
+          items: order.items || [],
+          address: order.address || customerDetails?.address || ''
+        }
+      })
+    )
 
     return NextResponse.json({ success: true, data: transformedOrders })
   } catch (error) {
@@ -58,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     if (action === 'updateStatus') {
       await db.collection('orders').updateOne(
-        { id: data.orderId },
+        { orderId: data.orderId },
         {
           $set: {
             status: data.status,

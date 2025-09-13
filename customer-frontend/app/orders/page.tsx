@@ -136,8 +136,8 @@ export default function OrdersPage() {
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">Order ID</span>
-                          <span className="text-sm text-muted-foreground">{order.orderId}</span>
+                          <span className="font-medium text-sm">Order ID:</span>
+                          <span className="text-sm font-mono font-medium text-blue-600">{order.orderId}</span>
                         </div>
                         <p className="text-xs text-muted-foreground">
                           Order Date: {order.date}

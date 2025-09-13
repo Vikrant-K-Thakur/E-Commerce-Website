@@ -73,7 +73,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Order ID</p>
-                    <p className="font-semibold">{orderData.id}</p>
+                    <p className="font-semibold font-mono text-blue-600">{params.id}</p>
                   </div>
                   <Badge className="bg-blue-100 text-blue-800">
                     <Truck className="w-3 h-3 mr-1" />
