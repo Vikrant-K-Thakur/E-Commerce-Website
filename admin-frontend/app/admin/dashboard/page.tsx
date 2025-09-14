@@ -92,10 +92,6 @@ export default function AdminDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
                 <p className="text-3xl font-bold text-gray-900">{kpis.totalRevenue.toLocaleString()} coins</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+12.5% vs Last Month</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-blue-600" />
@@ -113,10 +109,6 @@ export default function AdminDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg. Order Value</p>
                 <p className="text-3xl font-bold text-gray-900">{kpis.avgOrderValue.toLocaleString()} coins</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+2.3% vs Last Month</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <ShoppingCart className="w-6 h-6 text-green-600" />
@@ -134,10 +126,6 @@ export default function AdminDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
                 <p className="text-3xl font-bold text-gray-900">{kpis.conversionRate}%</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingDown className="w-4 h-4 text-red-600" />
-                  <span className="text-sm text-red-600">-0.8% vs Last Month</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-orange-600" />
@@ -155,10 +143,6 @@ export default function AdminDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">New Customers</p>
                 <p className="text-3xl font-bold text-gray-900">{kpis.newCustomers.toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+8.7% vs Last Month</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Users className="w-6 h-6 text-purple-600" />

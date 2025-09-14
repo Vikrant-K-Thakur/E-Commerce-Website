@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
         image: data.image,
         category: data.category || '',
         sizes: data.sizes || [],
+        available: data.available !== false,
         created_at: new Date(),
         updated_at: new Date(),
       }
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
         image: data.image,
         category: data.category || '',
         sizes: data.sizes || [],
+        available: data.available !== false,
         updated_at: new Date(),
       }
 

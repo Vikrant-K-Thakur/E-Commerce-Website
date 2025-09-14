@@ -64,6 +64,10 @@ export default function HomePage() {
   }
 
   const handleAddToCart = (product: any) => {
+    if (product.available === false) {
+      return // Don't allow adding unavailable products to cart
+    }
+
     const availableSizes = product.sizes?.filter((s: any) => {
       if (typeof s === 'string') return true
       return s.available !== false
@@ -179,28 +183,53 @@ export default function HomePage() {
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {filteredProducts.map((product) => (
-                  <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <Card key={product.id} className={`overflow-hidden hover:shadow-lg transition-shadow ${
+                    product.available === false ? 'border-red-200 bg-red-50' : ''
+                  }`}>
                     <div className="relative">
                       <img
                         src={product.image || "/placeholder.svg"}
                         alt={product.name}
-                        className="w-full h-40 lg:h-48 object-cover"
+                        className={`w-full h-40 lg:h-48 object-cover ${
+                          product.available === false ? 'opacity-60 grayscale' : ''
+                        }`}
                       />
+                      {product.available === false && (
+                        <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
+                          <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
+                            Not Available
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <CardContent className="p-3 space-y-2">
                       <div className="space-y-1">
-                        <h3 className="font-medium text-sm line-clamp-2">{product.name}</h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
+                        <h3 className={`font-medium text-sm line-clamp-2 ${
+                          product.available === false ? 'text-red-600' : ''
+                        }`}>{product.name}</h3>
+                        <p className={`text-xs line-clamp-2 ${
+                          product.available === false ? 'text-red-400' : 'text-muted-foreground'
+                        }`}>{product.description}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">{product.price} coins</span>
+                        <span className={`font-semibold ${
+                          product.available === false ? 'text-red-600' : ''
+                        }`}>{product.price} coins</span>
+                        {product.available === false && (
+                          <span className="text-xs text-red-500 font-medium">Unavailable</span>
+                        )}
                       </div>
                       <Button 
                         size="sm" 
-                        className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                        className={`w-full ${
+                          product.available === false 
+                            ? 'bg-red-100 hover:bg-red-100 text-red-600 cursor-not-allowed' 
+                            : 'bg-secondary hover:bg-secondary/90 text-secondary-foreground'
+                        }`}
                         onClick={() => handleAddToCart(product)}
+                        disabled={product.available === false}
                       >
-                        Add to Cart
+                        {product.available === false ? 'Not Available' : 'Add to Cart'}
                       </Button>
                     </CardContent>
                   </Card>
@@ -255,14 +284,16 @@ export default function HomePage() {
       {/* Bottom Navigation - Mobile Only */}
       <BottomNavigation />
       
-      <SizeSelectionDialog
-        product={selectedProduct}
-        isOpen={showSizeDialog}
-        onClose={() => {
-          setShowSizeDialog(false)
-          setSelectedProduct(null)
-        }}
-      />
+      {selectedProduct && (
+        <SizeSelectionDialog
+          product={selectedProduct}
+          isOpen={showSizeDialog}
+          onClose={() => {
+            setShowSizeDialog(false)
+            setSelectedProduct(null)
+          }}
+        />
+      )}
     </div>
   )
 }

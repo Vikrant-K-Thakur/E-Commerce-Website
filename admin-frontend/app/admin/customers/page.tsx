@@ -32,8 +32,7 @@ interface Customer {
   name: string
   email: string
   phone: string
-  walletBalance: number
-  loyaltyCoins: number
+  coinBalance: number
   status: string
   orderHistory: number
   joinDate: string
@@ -52,6 +51,9 @@ export default function CustomerManagement() {
   const [rewardDescription, setRewardDescription] = useState("")
   const [selectedCustomer, setSelectedCustomer] = useState("")
   const [sendingReward, setSendingReward] = useState(false)
+  const [showOrdersDialog, setShowOrdersDialog] = useState(false)
+  const [selectedCustomerOrders, setSelectedCustomerOrders] = useState<any[]>([])
+  const [loadingOrders, setLoadingOrders] = useState(false)
   const itemsPerPage = 5
 
   useEffect(() => {
@@ -92,6 +94,22 @@ export default function CustomerManagement() {
   const handleSendDiscount = (customerId: string) => {
     // TODO: Implement discount sending logic
     console.log(`Sending discount to customer ${customerId}`)
+  }
+
+  const fetchCustomerOrders = async (customerEmail: string) => {
+    setLoadingOrders(true)
+    try {
+      const response = await fetch(`/api/orders?email=${customerEmail}`)
+      const result = await response.json()
+      if (result.success) {
+        setSelectedCustomerOrders(result.data)
+        setShowOrdersDialog(true)
+      }
+    } catch (error) {
+      console.error('Failed to fetch customer orders:', error)
+    } finally {
+      setLoadingOrders(false)
+    }
   }
 
   const sendReward = async () => {
@@ -212,8 +230,8 @@ export default function CustomerManagement() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Loyalty Coins</p>
-                <p className="text-3xl font-bold text-gray-900">{customers.reduce((total, c) => total + c.loyaltyCoins, 0).toLocaleString()}</p>
+                <p className="text-sm font-medium text-gray-600">Total Coin Balance</p>
+                <p className="text-3xl font-bold text-gray-900">{customers.reduce((total, c) => total + c.coinBalance, 0).toLocaleString()}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-600">+0%</span>
@@ -361,17 +379,15 @@ export default function CustomerManagement() {
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">NAME</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">EMAIL</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">PHONE</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">WALLET BALANCE</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">LOYALTY COINS</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">COIN BALANCE</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">STATUS</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER HISTORY</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedCustomers.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-gray-500">
+                      <td colSpan={6} className="py-12 text-center text-gray-500">
                         No customers found
                       </td>
                     </tr>
@@ -394,10 +410,7 @@ export default function CustomerManagement() {
                         <td className="py-4 px-4 text-gray-600">{customer.email}</td>
                         <td className="py-4 px-4 text-gray-600">{customer.phone}</td>
                         <td className="py-4 px-4">
-                          <span className="font-medium text-gray-900">${customer.walletBalance.toFixed(2)}</span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className="font-medium text-gray-900">{customer.loyaltyCoins.toLocaleString()}</span>
+                          <span className="font-medium text-gray-900">{customer.coinBalance.toLocaleString()} coins</span>
                         </td>
                         <td className="py-4 px-4">
                           <Badge
@@ -411,52 +424,6 @@ export default function CustomerManagement() {
                           <Button variant="link" className="p-0 h-auto text-blue-600">
                             {customer.orderHistory} orders
                           </Button>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={
-                                customer.status === "Active"
-                                  ? "text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  : "text-green-600 hover:text-green-700 hover:bg-green-50"
-                              }
-                              onClick={() =>
-                                handleStatusChange(customer.id, customer.status === "Active" ? "Blocked" : "Active")
-                              }
-                            >
-                              <Ban className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                              onClick={() => handleSendDiscount(customer.id)}
-                            >
-                              <Percent className="w-4 h-4" />
-                            </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-700">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View Profile</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Customer</DropdownMenuItem>
-                                <DropdownMenuItem>Send Message</DropdownMenuItem>
-                                <DropdownMenuItem>View Orders</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
                         </td>
                       </tr>
                     ))
@@ -504,6 +471,71 @@ export default function CustomerManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Customer Orders Dialog */}
+      <Dialog open={showOrdersDialog} onOpenChange={setShowOrdersDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Customer Order History</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {loadingOrders ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <span className="ml-2 text-gray-600">Loading orders...</span>
+              </div>
+            ) : selectedCustomerOrders.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No orders found for this customer
+              </div>
+            ) : (
+              selectedCustomerOrders.map((order) => (
+                <Card key={order.id} className="border">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">Order #{order.orderId}</h3>
+                        <p className="text-sm text-gray-600">{order.orderDate} at {order.orderTime}</p>
+                      </div>
+                      <div className="text-right">
+                        <Badge 
+                          variant={order.status === 'delivered' ? 'default' : order.status === 'cancelled' ? 'destructive' : 'secondary'}
+                          className={order.status === 'delivered' ? 'bg-green-100 text-green-800' : ''}
+                        >
+                          {order.status}
+                        </Badge>
+                        <p className="text-lg font-semibold text-gray-900 mt-1">{order.total} coins</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {order.items?.map((item: any, index: number) => (
+                        <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
+                          <img
+                            src={item.image || '/placeholder.svg'}
+                            alt={item.name}
+                            className="w-12 h-12 object-cover rounded"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder.svg'
+                            }}
+                          />
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{item.name}</p>
+                            <p className="text-xs text-gray-600">Qty: {item.quantity} × {item.price} coins</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium text-sm">{(item.quantity * item.price)} coins</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

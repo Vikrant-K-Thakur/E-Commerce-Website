@@ -19,6 +19,7 @@ interface Product {
   description: string
   image: string
   sizes?: any[]
+  available?: boolean
 }
 
 export function FeaturedProducts() {
@@ -38,6 +39,10 @@ export function FeaturedProducts() {
   }
 
   const handleAddToCart = (product: Product) => {
+    if (product.available === false) {
+      return // Don't allow adding unavailable products to cart
+    }
+
     const availableSizes = product.sizes?.filter((s: any) => {
       if (typeof s === 'string') return true
       return s.available !== false
@@ -74,15 +79,26 @@ export function FeaturedProducts() {
     <>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {products.map((product) => (
-          <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-card border-border/50">
+          <Card key={product.id} className={`overflow-hidden hover:shadow-lg transition-shadow bg-card border-border/50 ${
+            product.available === false ? 'border-red-200 bg-red-50' : ''
+          }`}>
             <div className="relative">
               <Link href={`/products/${product.id}`}>
                 <img
                   src={product.image || "/placeholder.svg"}
                   alt={product.name}
-                  className="w-full h-40 sm:h-48 object-cover"
+                  className={`w-full h-40 sm:h-48 object-cover ${
+                    product.available === false ? 'opacity-60 grayscale' : ''
+                  }`}
                 />
               </Link>
+              {product.available === false && (
+                <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
+                  <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
+                    Not Available
+                  </span>
+                </div>
+              )}
               <AuthGuard>
                 <button 
                   className="absolute top-2 right-2 p-1.5 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background/90 transition-colors"
@@ -94,21 +110,35 @@ export function FeaturedProducts() {
             </div>
             <CardContent className="p-3 space-y-2">
               <div className="space-y-1">
-                <h3 className="font-medium text-sm text-foreground line-clamp-2 text-balance">{product.name}</h3>
-                <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
+                <h3 className={`font-medium text-sm line-clamp-2 text-balance ${
+                  product.available === false ? 'text-red-600' : 'text-foreground'
+                }`}>{product.name}</h3>
+                <p className={`text-xs line-clamp-2 ${
+                  product.available === false ? 'text-red-400' : 'text-muted-foreground'
+                }`}>{product.description}</p>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">{product.price} coins</span>
+                <span className={`font-semibold ${
+                  product.available === false ? 'text-red-600' : 'text-foreground'
+                }`}>{product.price} coins</span>
+                {product.available === false && (
+                  <span className="text-xs text-red-500 font-medium">Unavailable</span>
+                )}
               </div>
 
               <AuthGuard>
                 <Button
                   size="sm"
-                  className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                  className={`w-full ${
+                    product.available === false 
+                      ? 'bg-red-100 hover:bg-red-100 text-red-600 cursor-not-allowed' 
+                      : 'bg-secondary hover:bg-secondary/90 text-secondary-foreground'
+                  }`}
                   onClick={() => handleAddToCart(product)}
+                  disabled={product.available === false}
                 >
-                  Add to Cart
+                  {product.available === false ? 'Not Available' : 'Add to Cart'}
                 </Button>
               </AuthGuard>
             </CardContent>
@@ -121,14 +151,16 @@ export function FeaturedProducts() {
         )}
       </div>
       
-      <SizeSelectionDialog
-        product={selectedProduct}
-        isOpen={showSizeDialog}
-        onClose={() => {
-          setShowSizeDialog(false)
-          setSelectedProduct(null)
-        }}
-      />
+      {selectedProduct && (
+        <SizeSelectionDialog
+          product={selectedProduct}
+          isOpen={showSizeDialog}
+          onClose={() => {
+            setShowSizeDialog(false)
+            setSelectedProduct(null)
+          }}
+        />
+      )}
     </>
   )
 }

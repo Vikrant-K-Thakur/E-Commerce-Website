@@ -31,7 +31,8 @@ export default function AddProductPage() {
     description: '',
     image: '',
     category: '',
-    sizes: ''
+    sizes: '',
+    available: true
   })
   const [isLoading, setIsLoading] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -73,13 +74,14 @@ export default function AddProductPage() {
           description: formData.description,
           image: formData.image,
           category: formData.category,
-          sizes: sizesArray
+          sizes: sizesArray,
+          available: formData.available
         })
       })
 
       const result = await response.json()
       if (result.success) {
-        setFormData({ productId: '', name: '', price: '', description: '', image: '', category: '', sizes: '' })
+        setFormData({ productId: '', name: '', price: '', description: '', image: '', category: '', sizes: '', available: true })
         setEditingProduct(null)
         fetchProducts()
         toast({
@@ -142,14 +144,15 @@ export default function AddProductPage() {
       description: product.description,
       image: product.image,
       category: product.category || '',
-      sizes: product.sizes?.join(', ') || ''
+      sizes: product.sizes?.join(', ') || '',
+      available: product.available !== false
     })
     setError('')
   }
 
   const handleCancelEdit = () => {
     setEditingProduct(null)
-    setFormData({ productId: '', name: '', price: '', description: '', image: '', category: '', sizes: '' })
+    setFormData({ productId: '', name: '', price: '', description: '', image: '', category: '', sizes: '', available: true })
     setError('')
   }
 
@@ -246,13 +249,40 @@ export default function AddProductPage() {
                 required
               />
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-600">Sizes (optional)</label>
-              <Input
-                value={formData.sizes}
-                onChange={(e) => setFormData({...formData, sizes: e.target.value})}
-                placeholder="Enter sizes separated by commas (e.g., S, M, L, XL)"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-600">Sizes (optional)</label>
+                <Input
+                  value={formData.sizes}
+                  onChange={(e) => setFormData({...formData, sizes: e.target.value})}
+                  placeholder="Enter sizes separated by commas (e.g., S, M, L, XL)"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Availability</label>
+                <div className="flex items-center gap-4 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="available"
+                      checked={formData.available === true}
+                      onChange={() => setFormData({...formData, available: true})}
+                      className="text-green-600"
+                    />
+                    <span className="text-sm text-green-600">Available</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="available"
+                      checked={formData.available === false}
+                      onChange={() => setFormData({...formData, available: false})}
+                      className="text-red-600"
+                    />
+                    <span className="text-sm text-red-600">Not Available</span>
+                  </label>
+                </div>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={isLoading} className="flex-1 bg-blue-600 hover:bg-blue-700">
@@ -284,6 +314,7 @@ export default function AddProductPage() {
                   <TableHead className="text-gray-600">Name</TableHead>
                   <TableHead className="text-gray-600">Price</TableHead>
                   <TableHead className="text-gray-600">Category</TableHead>
+                  <TableHead className="text-gray-600">Status</TableHead>
                   <TableHead className="text-gray-600">Description</TableHead>
                   <TableHead className="text-gray-600">Actions</TableHead>
                 </TableRow>
@@ -311,6 +342,14 @@ export default function AddProductPage() {
                       <Badge variant="secondary" className="bg-green-100 text-green-800">{product.price} coins</Badge>
                     </TableCell>
                     <TableCell className="text-gray-600">{product.category || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={product.available !== false ? "default" : "destructive"}
+                        className={product.available !== false ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                      >
+                        {product.available !== false ? 'Available' : 'Not Available'}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="max-w-xs truncate text-gray-600">{product.description}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">

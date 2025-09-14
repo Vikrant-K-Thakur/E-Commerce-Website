@@ -31,6 +31,7 @@ export async function GET() {
       productId: p.productId || null,
       category: p.category || '',
       sizes: p.sizes || [],
+      available: p.available !== false,
       _id: undefined,
     }))
 
