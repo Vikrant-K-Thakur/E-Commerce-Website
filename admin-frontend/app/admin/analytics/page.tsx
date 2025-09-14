@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -22,49 +22,57 @@ import {
 } from "recharts"
 import { BarChart3, TrendingUp, TrendingDown, Users, ShoppingCart, DollarSign, Download } from "lucide-react"
 
-const salesData = [
-  { month: "Jan", revenue: 65000, orders: 450, customers: 320 },
-  { month: "Feb", revenue: 72000, orders: 520, customers: 380 },
-  { month: "Mar", revenue: 68000, orders: 480, customers: 350 },
-  { month: "Apr", revenue: 85000, orders: 620, customers: 420 },
-  { month: "May", revenue: 92000, orders: 680, customers: 480 },
-  { month: "Jun", revenue: 98000, orders: 720, customers: 520 },
-  { month: "Jul", revenue: 105000, orders: 780, customers: 580 },
-]
-
-const customerSegmentData = [
-  { name: "New Customers", value: 35, color: "#3B82F6" },
-  { name: "Returning Customers", value: 45, color: "#10B981" },
-  { name: "VIP Customers", value: 20, color: "#8B5CF6" },
-]
-
-const productPerformanceData = [
-  { category: "Electronics", sales: 45000, units: 1200, growth: 12.5 },
-  { category: "Clothing", sales: 38000, units: 2100, growth: 8.3 },
-  { category: "Home & Garden", sales: 28000, units: 850, growth: -2.1 },
-  { category: "Books", sales: 15000, units: 950, growth: 15.7 },
-  { category: "Sports", sales: 22000, units: 680, growth: 5.4 },
-]
-
-const conversionFunnelData = [
-  { stage: "Visitors", count: 10000, percentage: 100 },
-  { stage: "Product Views", count: 6500, percentage: 65 },
-  { stage: "Add to Cart", count: 2800, percentage: 28 },
-  { stage: "Checkout", count: 1200, percentage: 12 },
-  { stage: "Purchase", count: 850, percentage: 8.5 },
-]
-
-const topProductsData = [
-  { name: "Wireless Headphones", revenue: 25000, units: 450, rating: 4.8 },
-  { name: "Smart Watch", revenue: 22000, units: 320, rating: 4.6 },
-  { name: "Laptop Stand", revenue: 18000, units: 680, rating: 4.7 },
-  { name: "Bluetooth Speaker", revenue: 15000, units: 520, rating: 4.5 },
-  { name: "Phone Case", revenue: 12000, units: 890, rating: 4.4 },
-]
+interface AnalyticsData {
+  keyMetrics: {
+    totalRevenue: number
+    totalOrders: number
+    activeCustomers: number
+    conversionRate: number
+  }
+  salesData: Array<{ month: string; revenue: number; orders: number; customers: number }>
+  customerSegmentData: Array<{ name: string; value: number; color: string }>
+  productPerformanceData: Array<{ category: string; sales: number; units: number; growth: number }>
+  conversionFunnelData: Array<{ stage: string; count: number; percentage: number }>
+  topProductsData: Array<{ name: string; revenue: number; units: number; rating: string }>
+}
 
 export default function ReportsAnalytics() {
   const [timeRange, setTimeRange] = useState("7d")
   const [reportType, setReportType] = useState("sales")
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchAnalyticsData = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/analytics?timeRange=${timeRange}`)
+      const result = await response.json()
+      
+      if (result.success) {
+        setAnalyticsData(result.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch analytics data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAnalyticsData()
+  }, [timeRange])
+
+  if (loading || !analyticsData) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-600">Loading analytics data...</div>
+        </div>
+      </div>
+    )
+  }
+
+  const { keyMetrics, salesData, customerSegmentData, productPerformanceData, conversionFunnelData, topProductsData } = analyticsData
 
   return (
     <div className="p-6 space-y-6">
@@ -100,11 +108,7 @@ export default function ReportsAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-3xl font-bold text-gray-900">545,000 coins</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+18.2% vs last period</span>
-                </div>
+                <p className="text-3xl font-bold text-gray-900">{keyMetrics.totalRevenue.toLocaleString()} coins</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-blue-600" />
@@ -118,11 +122,7 @@ export default function ReportsAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                <p className="text-3xl font-bold text-gray-900">4,250</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+12.5% vs last period</span>
-                </div>
+                <p className="text-3xl font-bold text-gray-900">{keyMetrics.totalOrders.toLocaleString()}</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <ShoppingCart className="w-6 h-6 text-green-600" />
@@ -136,11 +136,7 @@ export default function ReportsAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Customers</p>
-                <p className="text-3xl font-bold text-gray-900">3,080</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+8.7% vs last period</span>
-                </div>
+                <p className="text-3xl font-bold text-gray-900">{keyMetrics.activeCustomers.toLocaleString()}</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Users className="w-6 h-6 text-purple-600" />
@@ -154,11 +150,7 @@ export default function ReportsAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
-                <p className="text-3xl font-bold text-gray-900">8.5%</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingDown className="w-4 h-4 text-red-600" />
-                  <span className="text-sm text-red-600">-1.2% vs last period</span>
-                </div>
+                <p className="text-3xl font-bold text-gray-900">{keyMetrics.conversionRate}%</p>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-orange-600" />
@@ -382,7 +374,7 @@ export default function ReportsAnalytics() {
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <span className="font-medium text-gray-900">${product.revenue.toLocaleString()}</span>
+                      <span className="font-medium text-gray-900">{product.revenue.toLocaleString()} coins</span>
                     </td>
                     <td className="py-4 px-4">
                       <span className="text-gray-600">{product.units.toLocaleString()}</span>
