@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BarChart3, ShoppingCart, Users, TrendingUp, TrendingDown, AlertTriangle, DollarSign } from "lucide-react"
@@ -16,25 +17,62 @@ import {
   Cell,
 } from "recharts"
 
-const revenueData = [
-  { month: "Jan", revenue: 65000 },
-  { month: "Feb", revenue: 72000 },
-  { month: "Mar", revenue: 68000 },
-  { month: "Apr", revenue: 85000 },
-  { month: "May", revenue: 92000 },
-  { month: "Jun", revenue: 98000 },
-  { month: "Jul", revenue: 105000 },
-]
-
-const categoryData = [
-  { name: "Electronics", value: 45, color: "#3B82F6" },
-  { name: "Clothing", value: 25, color: "#EF4444" },
-  { name: "Home & Garden", value: 15, color: "#F59E0B" },
-  { name: "Books", value: 10, color: "#10B981" },
-  { name: "Sports", value: 5, color: "#8B5CF6" },
-]
+interface DashboardData {
+  kpis: {
+    totalRevenue: number
+    avgOrderValue: number
+    conversionRate: number
+    newCustomers: number
+  }
+  revenueData: Array<{ month: string; revenue: number }>
+  customerSegmentation: {
+    newCustomers: number
+    returningCustomers: number
+    highValueCustomers: number
+  }
+  topProducts: Array<{ name: string; sales: number; revenue: number }>
+  categoryData: Array<{ name: string; value: number; color: string }>
+  inventory: {
+    totalValue: number
+    lowStockProducts: Array<{ name: string; stock: number }>
+  }
+}
 
 export default function AdminDashboard() {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/dashboard')
+      const result = await response.json()
+      
+      if (result.success) {
+        setDashboardData(result.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  if (loading || !dashboardData) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-600">Loading dashboard data...</div>
+        </div>
+      </div>
+    )
+  }
+
+  const { kpis, revenueData, customerSegmentation, topProducts, categoryData, inventory } = dashboardData
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -53,7 +91,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-3xl font-bold text-gray-900">1,245,678 coins</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.totalRevenue.toLocaleString()} coins</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-600">+12.5% vs Last Month</span>
@@ -74,7 +112,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg. Order Value</p>
-                <p className="text-3xl font-bold text-gray-900">125.50 coins</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.avgOrderValue.toLocaleString()} coins</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-600">+2.3% vs Last Month</span>
@@ -95,7 +133,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
-                <p className="text-3xl font-bold text-gray-900">4.7%</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.conversionRate}%</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingDown className="w-4 h-4 text-red-600" />
                   <span className="text-sm text-red-600">-0.8% vs Last Month</span>
@@ -116,7 +154,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">New Customers</p>
-                <p className="text-3xl font-bold text-gray-900">1,200</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.newCustomers.toLocaleString()}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <TrendingUp className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-600">+8.7% vs Last Month</span>
@@ -193,21 +231,21 @@ export default function AdminDashboard() {
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                   <span className="text-sm text-gray-600">New Customers</span>
                 </div>
-                <span className="text-sm font-medium">1200 (22%)</span>
+                <span className="text-sm font-medium">{customerSegmentation.newCustomers} ({Math.round((customerSegmentation.newCustomers / (customerSegmentation.newCustomers + customerSegmentation.returningCustomers + customerSegmentation.highValueCustomers)) * 100)}%)</span>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <span className="text-sm text-gray-600">Returning Customers</span>
                 </div>
-                <span className="text-sm font-medium">3500 (64%)</span>
+                <span className="text-sm font-medium">{customerSegmentation.returningCustomers} ({Math.round((customerSegmentation.returningCustomers / (customerSegmentation.newCustomers + customerSegmentation.returningCustomers + customerSegmentation.highValueCustomers)) * 100)}%)</span>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                   <span className="text-sm text-gray-600">High-Value Customers</span>
                 </div>
-                <span className="text-sm font-medium">800 (15%)</span>
+                <span className="text-sm font-medium">{customerSegmentation.highValueCustomers} ({Math.round((customerSegmentation.highValueCustomers / (customerSegmentation.newCustomers + customerSegmentation.returningCustomers + customerSegmentation.highValueCustomers)) * 100)}%)</span>
               </div>
             </div>
             <Button variant="link" className="p-0 h-auto text-blue-600 w-full justify-start">
@@ -232,13 +270,7 @@ export default function AdminDashboard() {
                 <span className="text-center">Sales</span>
                 <span className="text-right">Revenue</span>
               </div>
-              {[
-                { name: "Wireless Headphones", sales: 1200, revenue: 180000 },
-                { name: "Smart Watch X2", sales: 950, revenue: 142500 },
-                { name: "Ergonomic Office Chair", sales: 700, revenue: 105000 },
-                { name: "Portable Power Bank", sales: 600, revenue: 30000 },
-                { name: "LED Desk Lamp", sales: 480, revenue: 19200 },
-              ].map((product, index) => (
+              {topProducts.map((product, index) => (
                 <div key={index} className="grid grid-cols-3 gap-4 py-3 border-b border-gray-100 last:border-b-0">
                   <div>
                     <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
@@ -247,7 +279,7 @@ export default function AdminDashboard() {
                     <p className="text-sm text-gray-900">{product.sales.toLocaleString()}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">${product.revenue.toLocaleString()}</p>
+                    <p className="text-sm font-medium text-gray-900">{product.revenue.toLocaleString()} coins</p>
                   </div>
                 </div>
               ))}
@@ -313,29 +345,27 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-600">Total Inventory Value:</span>
-                  <span className="text-lg font-bold text-gray-900">540,000 coins</span>
+                  <span className="text-lg font-bold text-gray-900">{inventory.totalValue.toLocaleString()} coins</span>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Low Stock Alerts (3)</span>
+                  <span className="text-sm text-gray-600">Low Stock Alerts ({inventory.lowStockProducts.length})</span>
                   <AlertTriangle className="w-4 h-4 text-orange-500" />
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-center p-2 bg-orange-50 rounded-lg">
-                    <span className="text-gray-700">Smart Watch X2</span>
-                    <span className="text-orange-600 font-medium">18 in stock</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-orange-50 rounded-lg">
-                    <span className="text-gray-700">LED Desk Lamp</span>
-                    <span className="text-orange-600 font-medium">32 in stock</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-red-50 rounded-lg">
-                    <span className="text-gray-700">Bluetooth Speaker</span>
-                    <span className="text-red-600 font-medium">10 in stock</span>
-                  </div>
+                  {inventory.lowStockProducts.map((product, index) => (
+                    <div key={index} className={`flex justify-between items-center p-2 rounded-lg ${
+                      product.stock < 20 ? 'bg-red-50' : 'bg-orange-50'
+                    }`}>
+                      <span className="text-gray-700">{product.name}</span>
+                      <span className={`font-medium ${
+                        product.stock < 20 ? 'text-red-600' : 'text-orange-600'
+                      }`}>{product.stock} in stock</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
