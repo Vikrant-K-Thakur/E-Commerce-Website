@@ -174,10 +174,6 @@ export default function CustomerManagement() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Customers</p>
                 <p className="text-3xl font-bold text-gray-900">{customers.length}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+0%</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Users className="w-6 h-6 text-blue-600" />
@@ -192,10 +188,6 @@ export default function CustomerManagement() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Customers</p>
                 <p className="text-3xl font-bold text-gray-900">{customers.filter(c => c.status === 'Active').length}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+0%</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <UserCheck className="w-6 h-6 text-green-600" />
@@ -214,10 +206,6 @@ export default function CustomerManagement() {
                   const now = new Date()
                   return joinDate.getMonth() === now.getMonth() && joinDate.getFullYear() === now.getFullYear()
                 }).length}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+0%</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
                 <UserPlus className="w-6 h-6 text-orange-600" />
@@ -232,10 +220,6 @@ export default function CustomerManagement() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Coin Balance</p>
                 <p className="text-3xl font-bold text-gray-900">{customers.reduce((total, c) => total + c.coinBalance, 0).toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-600">+0%</span>
-                </div>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Coins className="w-6 h-6 text-purple-600" />

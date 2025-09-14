@@ -84,7 +84,7 @@ export default function OrderManagement() {
 
   const updateOrderStatus = async () => {
     if (!statusUpdateOrder || !newStatus) return
-    
+
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -96,7 +96,7 @@ export default function OrderManagement() {
           trackingId: trackingId || null
         })
       })
-      
+
       if (response.ok) {
         fetchOrders()
         setStatusUpdateOrder(null)
@@ -137,39 +137,57 @@ export default function OrderManagement() {
   }
 
   const downloadReceipt = (period: string) => {
-    const now = new Date()
-    let filteredOrders = orders
-    
-    if (period === 'week') {
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      filteredOrders = orders.filter(order => new Date(order.orderDate) >= weekAgo)
-    } else if (period === 'month') {
-      const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-      filteredOrders = orders.filter(order => new Date(order.orderDate) >= monthAgo)
-    } else if (period === 'year') {
-      const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
-      filteredOrders = orders.filter(order => new Date(order.orderDate) >= yearAgo)
+    try {
+      const now = new Date()
+      let filteredOrders = orders
+
+      if (period === 'week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        filteredOrders = orders.filter(order => new Date(order.orderDate) >= weekAgo)
+      } else if (period === 'month') {
+        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+        filteredOrders = orders.filter(order => new Date(order.orderDate) >= monthAgo)
+      } else if (period === 'year') {
+        const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+        filteredOrders = orders.filter(order => new Date(order.orderDate) >= yearAgo)
+      }
+
+      if (filteredOrders.length === 0) {
+        alert(`No orders found for the selected period (${period})`)
+        return
+      }
+
+      const csvContent = [
+        ['Order ID', 'Customer', 'Email', 'Phone', 'Date', 'Time', 'Total (Coins)', 'Status', 'Payment Method'].join(','),
+        ...filteredOrders.map(order => [
+          `"${order.id}"`,
+          `"${order.customer}"`,
+          `"${order.customerEmail}"`,
+          `"${order.customerPhone || 'N/A'}"`,
+          `"${order.orderDate}"`,
+          `"${order.orderTime}"`,
+          `"${order.total}"`,
+          `"${order.status}"`,
+          `"${order.paymentMethod}"`
+        ].join(','))
+      ].join('\n')
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `orders-report-${period}-${now.toISOString().split('T')[0]}.csv`
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      alert(`Orders report for ${period} downloaded successfully! (${filteredOrders.length} orders)`)
+    } catch (error) {
+      console.error('Download failed:', error)
+      alert('Failed to download report. Please try again.')
     }
-    
-    const csvContent = [
-      ['Order ID', 'Customer', 'Email', 'Date', 'Total', 'Status'].join(','),
-      ...filteredOrders.map(order => [
-        order.id,
-        order.customer,
-        order.customerEmail,
-        order.orderDate,
-        order.total,
-        order.status
-      ].join(','))
-    ].join('\n')
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `orders-${period}-${now.toISOString().split('T')[0]}.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
   }
 
   const filteredOrders = orders.filter((order) => {
@@ -573,7 +591,7 @@ export default function OrderManagement() {
                                 </div>
                               </DialogContent>
                             </Dialog>
-                            
+
                             {(order.status !== 'cancelled' && order.status !== 'delivered') && (
                               <Button
                                 variant="destructive"
