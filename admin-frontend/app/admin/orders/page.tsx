@@ -26,6 +26,7 @@ import {
   FileText,
   Download,
   Loader2,
+  BarChart3,
 } from "lucide-react"
 
 interface Order {
@@ -48,7 +49,290 @@ interface Order {
   address: string
 }
 
+// Analytics Dialog Component
+const AnalyticsDialog = ({ orders, open, onOpenChange }: { orders: Order[], open: boolean, onOpenChange: (open: boolean) => void }) => {
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('month')
+  const [isGenerating, setIsGenerating] = useState(false)
 
+  const generateReport = (period: string) => {
+    setIsGenerating(true)
+    setTimeout(() => {
+      downloadReceipt(period)
+      setIsGenerating(false)
+      onOpenChange(false)
+    }, 1000)
+  }
+
+  const downloadReceipt = (period: string) => {
+    try {
+      const now = new Date()
+      let filteredOrders = orders
+
+      if (period === 'week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        filteredOrders = orders.filter(order => new Date(order.orderDate) >= weekAgo)
+      } else if (period === 'month') {
+        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+        filteredOrders = orders.filter(order => new Date(order.orderDate) >= monthAgo)
+      } else if (period === 'year') {
+        const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+        filteredOrders = orders.filter(order => new Date(order.orderDate) >= yearAgo)
+      }
+
+      if (filteredOrders.length === 0) {
+        alert(`No orders found for the selected period (${period})`)
+        return
+      }
+
+      // Calculate analytics data
+      const totalRevenue = filteredOrders.reduce((sum, order) => sum + order.total, 0)
+      const avgOrderValue = totalRevenue / filteredOrders.length
+      const statusCounts = filteredOrders.reduce((acc, order) => {
+        // Normalize status to handle case variations
+        const normalizedStatus = order.status.charAt(0).toUpperCase() + order.status.slice(1).toLowerCase()
+        acc[normalizedStatus] = (acc[normalizedStatus] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+
+      // Payment method distribution
+      const paymentMethodCounts = filteredOrders.reduce((acc, order) => {
+        const normalizedMethod = order.paymentMethod.charAt(0).toUpperCase() + order.paymentMethod.slice(1).toLowerCase()
+        acc[normalizedMethod] = (acc[normalizedMethod] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+
+      // Generate PDF content as HTML
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Orders Analytics Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #007bff; padding-bottom: 20px; }
+    .analytics { margin-bottom: 30px; }
+    .metrics { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+    .metric { flex: 1; min-width: 200px; padding: 20px; border: 2px solid #007bff; border-radius: 8px; text-align: center; background: #f8f9fa; }
+    .metric h4 { margin: 0 0 10px 0; color: #007bff; font-size: 14px; }
+    .metric p { margin: 0; font-size: 24px; font-weight: bold; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 12px 8px; text-align: left; }
+    th { background-color: #007bff; color: white; font-weight: bold; }
+    tr:nth-child(even) { background-color: #f8f9fa; }
+    .status-delivered { color: #28a745; font-weight: bold; }
+    .status-cancelled { color: #dc3545; font-weight: bold; }
+    .status-pending { color: #fd7e14; font-weight: bold; }
+    .status-shipped { color: #17a2b8; font-weight: bold; }
+    .status-processing { color: #ffc107; font-weight: bold; }
+    .chart-container { display: flex; gap: 30px; margin: 20px 0; }
+    .chart { flex: 1; min-width: 300px; }
+    .chart-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #007bff; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 style="color: #007bff; margin: 0;">Orders Analytics Report</h1>
+    <h3 style="margin: 10px 0; color: #666;">Period: ${period.charAt(0).toUpperCase() + period.slice(1)} Report</h3>
+    <p style="margin: 0; color: #888;">Generated on: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}</p>
+  </div>
+  
+  <div class="analytics">
+    <h2 style="color: #007bff; margin-bottom: 20px;">Analytics Summary</h2>
+    <div class="metrics">
+      <div class="metric">
+        <h4>Total Orders</h4>
+        <p>${filteredOrders.length}</p>
+      </div>
+      <div class="metric">
+        <h4>Total Revenue</h4>
+        <p>${totalRevenue.toFixed(2)} coins</p>
+      </div>
+      <div class="metric">
+        <h4>Average Order Value</h4>
+        <p>${avgOrderValue.toFixed(2)} coins</p>
+      </div>
+      <div class="metric">
+        <h4>Delivered Orders</h4>
+        <p>${statusCounts['Delivered'] || statusCounts['delivered'] || 0}</p>
+      </div>
+      <div class="metric">
+        <h4>Cancelled Orders</h4>
+        <p>${statusCounts['Cancelled'] || statusCounts['cancelled'] || 0}</p>
+      </div>
+      <div class="metric">
+        <h4>Pending Orders</h4>
+        <p>${statusCounts['Pending'] || statusCounts['pending'] || 0}</p>
+      </div>
+      <div class="metric">
+        <h4>Shipped Orders</h4>
+        <p>${statusCounts['Shipped'] || statusCounts['shipped'] || 0}</p>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart">
+        <div class="chart-title">Order Status Distribution</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Count</th>
+              <th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Object.entries(statusCounts).map(([status, count]) => `
+              <tr>
+                <td class="status-${status.toLowerCase()}">${status}</td>
+                <td>${count}</td>
+                <td>${((count / filteredOrders.length) * 100).toFixed(1)}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="chart">
+        <div class="chart-title">Payment Methods</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Payment Method</th>
+              <th>Count</th>
+              <th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Object.entries(paymentMethodCounts).map(([method, count]) => `
+              <tr>
+                <td>${method}</td>
+                <td>${count}</td>
+                <td>${((count / filteredOrders.length) * 100).toFixed(1)}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <h2 style="color: #007bff; margin: 30px 0 15px 0;">Order Details</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th>Customer</th>
+        <th>Email</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Total (Coins)</th>
+        <th>Status</th>
+        <th>Payment Method</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${filteredOrders.map(order => `
+        <tr>
+          <td style="font-weight: bold; color: #007bff;">${order.id}</td>
+          <td>${order.customer}</td>
+          <td>${order.customerEmail}</td>
+          <td>${order.orderDate}</td>
+          <td>${order.orderTime}</td>
+          <td style="font-weight: bold;">${order.total.toFixed(2)}</td>
+          <td class="status-${order.status.toLowerCase()}">${order.status}</td>
+          <td style="text-transform: capitalize;">${order.paymentMethod}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+</body>
+</html>`
+
+      // Create new window and generate PDF
+      const printWindow = window.open('', '_blank', 'width=1000,height=800')
+      if (!printWindow) {
+        alert('Please allow popups to download the PDF report')
+        return
+      }
+
+      printWindow.document.open()
+      printWindow.document.write(htmlContent)
+      printWindow.document.close()
+
+      // Wait for content to load then trigger print
+      setTimeout(() => {
+        printWindow.focus()
+        printWindow.print()
+
+        // Close window after printing (optional)
+        setTimeout(() => {
+          printWindow.close()
+        }, 2000)
+      }, 500)
+
+      alert(`Analytics report for ${period} is being generated! (${filteredOrders.length} orders)`)
+    } catch (error) {
+      console.error('Download failed:', error)
+      alert('Failed to download report. Please try again.')
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Download Analytics Report
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="period">Select Time Period</Label>
+            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="year">This Year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <h4 className="font-medium text-sm mb-2">Report will include:</h4>
+            <ul className="text-xs text-gray-600 space-y-1">
+              <li>• Order statistics and revenue metrics</li>
+              <li>• Status distribution analysis</li>
+              <li>• Payment method breakdown</li>
+              <li>• Complete order listing with details</li>
+            </ul>
+          </div>
+
+          <Button
+            onClick={() => generateReport(selectedPeriod)}
+            className="w-full"
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating Report...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Download Report
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 export default function OrderManagement() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -61,6 +345,7 @@ export default function OrderManagement() {
   const [statusUpdateOrder, setStatusUpdateOrder] = useState<Order | null>(null)
   const [newStatus, setNewStatus] = useState("")
   const [trackingId, setTrackingId] = useState("")
+  const [analyticsDialogOpen, setAnalyticsDialogOpen] = useState(false)
   const itemsPerPage = 8
 
   useEffect(() => {
@@ -136,60 +421,6 @@ export default function OrderManagement() {
     }
   }
 
-  const downloadReceipt = (period: string) => {
-    try {
-      const now = new Date()
-      let filteredOrders = orders
-
-      if (period === 'week') {
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        filteredOrders = orders.filter(order => new Date(order.orderDate) >= weekAgo)
-      } else if (period === 'month') {
-        const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-        filteredOrders = orders.filter(order => new Date(order.orderDate) >= monthAgo)
-      } else if (period === 'year') {
-        const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
-        filteredOrders = orders.filter(order => new Date(order.orderDate) >= yearAgo)
-      }
-
-      if (filteredOrders.length === 0) {
-        alert(`No orders found for the selected period (${period})`)
-        return
-      }
-
-      const csvContent = [
-        ['Order ID', 'Customer', 'Email', 'Phone', 'Date', 'Time', 'Total (Coins)', 'Status', 'Payment Method'].join(','),
-        ...filteredOrders.map(order => [
-          `"${order.id}"`,
-          `"${order.customer}"`,
-          `"${order.customerEmail}"`,
-          `"${order.customerPhone || 'N/A'}"`,
-          `"${order.orderDate}"`,
-          `"${order.orderTime}"`,
-          `"${order.total}"`,
-          `"${order.status}"`,
-          `"${order.paymentMethod}"`
-        ].join(','))
-      ].join('\n')
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `orders-report-${period}-${now.toISOString().split('T')[0]}.csv`
-      link.style.display = 'none'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-
-      alert(`Orders report for ${period} downloaded successfully! (${filteredOrders.length} orders)`)
-    } catch (error) {
-      console.error('Download failed:', error)
-      alert('Failed to download report. Please try again.')
-    }
-  }
-
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -225,6 +456,13 @@ export default function OrderManagement() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Analytics Dialog */}
+      <AnalyticsDialog
+        orders={orders}
+        open={analyticsDialogOpen}
+        onOpenChange={setAnalyticsDialogOpen}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -232,19 +470,13 @@ export default function OrderManagement() {
           <p className="text-gray-600 mt-1">Track orders, manage deliveries, and handle refunds efficiently.</p>
         </div>
         <div className="flex gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Download className="w-4 h-4 mr-2" />
-                Download Reports
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => downloadReceipt('week')}>This Week</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => downloadReceipt('month')}>This Month</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => downloadReceipt('year')}>This Year</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => setAnalyticsDialogOpen(true)}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Reports
+          </Button>
         </div>
       </div>
 
