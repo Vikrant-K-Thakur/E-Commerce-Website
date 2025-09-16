@@ -20,7 +20,9 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import { BarChart3, TrendingUp, TrendingDown, Users, ShoppingCart, DollarSign, Download } from "lucide-react"
+import { BarChart3, TrendingUp, TrendingDown, Users, ShoppingCart, DollarSign, Download, Loader2 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 interface AnalyticsData {
   keyMetrics: {
@@ -36,11 +38,284 @@ interface AnalyticsData {
   topProductsData: Array<{ name: string; revenue: number; units: number; rating: string }>
 }
 
+// Analytics Export Dialog Component
+const AnalyticsExportDialog = ({ analyticsData, open, onOpenChange }: { analyticsData: AnalyticsData, open: boolean, onOpenChange: (open: boolean) => void }) => {
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('month')
+  const [isGenerating, setIsGenerating] = useState(false)
+
+  const generateReport = (period: string) => {
+    setIsGenerating(true)
+    setTimeout(() => {
+      downloadAnalyticsReport(period)
+      setIsGenerating(false)
+      onOpenChange(false)
+    }, 1000)
+  }
+
+  const downloadAnalyticsReport = (period: string) => {
+    try {
+      const now = new Date()
+      const { keyMetrics, salesData, customerSegmentData, productPerformanceData, conversionFunnelData, topProductsData } = analyticsData
+
+      // Generate PDF content as HTML
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Analytics Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #007bff; padding-bottom: 20px; }
+    .metrics { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-bottom: 30px; }
+    .metric { flex: 1; min-width: 200px; padding: 20px; border: 2px solid #007bff; border-radius: 8px; text-align: center; background: #f8f9fa; }
+    .metric h4 { margin: 0 0 10px 0; color: #007bff; font-size: 14px; }
+    .metric p { margin: 0; font-size: 24px; font-weight: bold; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 12px 8px; text-align: left; }
+    th { background-color: #007bff; color: white; font-weight: bold; }
+    tr:nth-child(even) { background-color: #f8f9fa; }
+    .section { margin: 30px 0; }
+    .section h3 { color: #007bff; margin-bottom: 15px; }
+    .chart-container { display: flex; gap: 30px; margin: 20px 0; }
+    .chart { flex: 1; min-width: 300px; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 style="color: #007bff; margin: 0;">Analytics Report</h1>
+    <h3 style="margin: 10px 0; color: #666;">Period: ${period.charAt(0).toUpperCase() + period.slice(1)} Report</h3>
+    <p style="margin: 0; color: #888;">Generated on: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}</p>
+  </div>
+  
+  <div class="metrics">
+    <div class="metric">
+      <h4>Total Revenue</h4>
+      <p>${keyMetrics.totalRevenue.toLocaleString()} coins</p>
+    </div>
+    <div class="metric">
+      <h4>Total Orders</h4>
+      <p>${keyMetrics.totalOrders.toLocaleString()}</p>
+    </div>
+    <div class="metric">
+      <h4>Active Customers</h4>
+      <p>${keyMetrics.activeCustomers.toLocaleString()}</p>
+    </div>
+    <div class="metric">
+      <h4>Conversion Rate</h4>
+      <p>${keyMetrics.conversionRate}%</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Sales Trend</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Revenue (Coins)</th>
+          <th>Orders</th>
+          <th>Customers</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${salesData.map(data => `
+          <tr>
+            <td>${data.month}</td>
+            <td style="font-weight: bold;">${data.revenue.toLocaleString()}</td>
+            <td>${data.orders.toLocaleString()}</td>
+            <td>${data.customers.toLocaleString()}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart-container">
+    <div class="chart">
+      <h3>Customer Segments</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Segment</th>
+            <th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${customerSegmentData.map(segment => `
+            <tr>
+              <td>${segment.name}</td>
+              <td style="font-weight: bold;">${segment.value}%</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chart">
+      <h3>Product Performance</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Sales (Coins)</th>
+            <th>Units</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${productPerformanceData.map(product => `
+            <tr>
+              <td>${product.category}</td>
+              <td style="font-weight: bold;">${product.sales.toLocaleString()}</td>
+              <td>${product.units.toLocaleString()}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Conversion Funnel</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>Count</th>
+          <th>Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${conversionFunnelData.map(stage => `
+          <tr>
+            <td>${stage.stage}</td>
+            <td>${stage.count.toLocaleString()}</td>
+            <td style="font-weight: bold;">${stage.percentage}%</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Top Performing Products</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Revenue (Coins)</th>
+          <th>Units Sold</th>
+          <th>Rating</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${topProductsData.map(product => `
+          <tr>
+            <td>${product.name}</td>
+            <td style="font-weight: bold;">${product.revenue.toLocaleString()}</td>
+            <td>${product.units.toLocaleString()}</td>
+            <td>${product.rating} ★</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>`
+
+      // Create new window and generate PDF
+      const printWindow = window.open('', '_blank', 'width=1000,height=800')
+      if (!printWindow) {
+        alert('Please allow popups to download the PDF report')
+        return
+      }
+
+      printWindow.document.open()
+      printWindow.document.write(htmlContent)
+      printWindow.document.close()
+
+      // Wait for content to load then trigger print
+      setTimeout(() => {
+        printWindow.focus()
+        printWindow.print()
+        
+        // Close window after printing (optional)
+        setTimeout(() => {
+          printWindow.close()
+        }, 2000)
+      }, 500)
+
+      alert(`Analytics report for ${period} is being generated!`)
+    } catch (error) {
+      console.error('Download failed:', error)
+      alert('Failed to download report. Please try again.')
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Download Analytics Report
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="period">Select Time Period</Label>
+            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="year">This Year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <h4 className="font-medium text-sm mb-2">Report will include:</h4>
+            <ul className="text-xs text-gray-600 space-y-1">
+              <li>• Key metrics and performance indicators</li>
+              <li>• Sales trend analysis</li>
+              <li>• Customer segmentation data</li>
+              <li>• Product performance by category</li>
+              <li>• Conversion funnel analysis</li>
+              <li>• Top performing products</li>
+            </ul>
+          </div>
+          
+          <Button 
+            onClick={() => generateReport(selectedPeriod)} 
+            className="w-full"
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating Report...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Download Report
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function ReportsAnalytics() {
   const [timeRange, setTimeRange] = useState("7d")
   const [reportType, setReportType] = useState("sales")
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
 
   const fetchAnalyticsData = async () => {
     try {
@@ -76,6 +351,12 @@ export default function ReportsAnalytics() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Analytics Export Dialog */}
+      <AnalyticsExportDialog 
+        analyticsData={analyticsData} 
+        open={exportDialogOpen} 
+        onOpenChange={setExportDialogOpen} 
+      />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -83,18 +364,10 @@ export default function ReportsAnalytics() {
           <p className="text-gray-600 mt-1">Comprehensive business intelligence and performance insights.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-              <SelectItem value="1y">Last year</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={() => setExportDialogOpen(true)}
+          >
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
