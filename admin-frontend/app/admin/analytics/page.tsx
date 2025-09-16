@@ -227,43 +227,41 @@ export default function ReportsAnalytics() {
           </CardContent>
         </Card>
 
-        {/* Customer Segmentation */}
+        {/* Customer Segments */}
         <Card>
           <CardHeader>
-            <CardTitle>Customer Segmentation</CardTitle>
-            <CardDescription>Customer base distribution</CardDescription>
+            <CardTitle>Customer Segments</CardTitle>
+            <CardDescription>Customer distribution by activity</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-64 mb-4">
+            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={customerSegmentData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    paddingAngle={2}
+                    innerRadius={60}
+                    outerRadius={120}
+                    paddingAngle={5}
                     dataKey="value"
                   >
                     {customerSegmentData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`${value}%`, "Share"]} />
+                  <Tooltip
+                    formatter={(value) => [`${value}%`, "Percentage"]}
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    }}
+                  />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
-            </div>
-            <div className="space-y-2">
-              {customerSegmentData.map((segment, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: segment.color }}></div>
-                    <span className="text-gray-600">{segment.name}</span>
-                  </div>
-                  <span className="font-medium text-gray-900">{segment.value}%</span>
-                </div>
-              ))}
             </div>
           </CardContent>
         </Card>
@@ -399,56 +397,6 @@ export default function ReportsAnalytics() {
         </CardContent>
       </Card>
 
-      {/* Report Generation */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate Custom Reports</CardTitle>
-          <CardDescription>Create detailed reports for specific business needs</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Select value={reportType} onValueChange={setReportType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Report Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sales">Sales Report</SelectItem>
-                <SelectItem value="customers">Customer Report</SelectItem>
-                <SelectItem value="products">Product Report</SelectItem>
-                <SelectItem value="inventory">Inventory Report</SelectItem>
-                <SelectItem value="marketing">Marketing Report</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Date Range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="quarter">This Quarter</SelectItem>
-                <SelectItem value="year">This Year</SelectItem>
-                <SelectItem value="custom">Custom Range</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pdf">PDF</SelectItem>
-                <SelectItem value="excel">Excel</SelectItem>
-                <SelectItem value="csv">CSV</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Download className="w-4 h-4 mr-2" />
-              Generate Report
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
