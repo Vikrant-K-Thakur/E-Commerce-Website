@@ -62,9 +62,10 @@ export default function HomePage() {
       let filtered = products.filter(product => {
         const productName = product.name.toLowerCase()
         const productDescription = product.description?.toLowerCase() || ''
+        const productCategory = product.category?.toLowerCase() || ''
         const category = selectedCategory.toLowerCase()
         
-        return productName.includes(category) || productDescription.includes(category)
+        return productName.includes(category) || productDescription.includes(category) || productCategory.includes(category)
       })
       
       // Apply sorting
