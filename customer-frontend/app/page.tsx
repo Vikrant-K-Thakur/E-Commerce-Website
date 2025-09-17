@@ -283,7 +283,10 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No products found matching your search.</p>
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-foreground">Coming Soon!</h3>
+                  <p className="text-muted-foreground">This product is coming soon. Stay tuned for updates!</p>
+                </div>
               </div>
             )}
           </section>
@@ -376,11 +379,16 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No {selectedCategory === 'regular' ? 'regular t shirts' : 
-                 selectedCategory === 'oversized' ? 'oversized tshirts' :
-                 selectedCategory === 'polo' ? 'polo t shirts' :
-                 selectedCategory === 'premium' ? 'premium collection items' :
-                 selectedCategory} found.</p>
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-foreground">Coming Soon!</h3>
+                  <p className="text-muted-foreground">
+                    {selectedCategory === 'regular' ? 'Regular t shirts are' : 
+                     selectedCategory === 'oversized' ? 'Oversized tshirts are' :
+                     selectedCategory === 'polo' ? 'Polo t shirts are' :
+                     selectedCategory === 'premium' ? 'Premium collection items are' :
+                     'These products are'} coming soon. Stay tuned for updates!
+                  </p>
+                </div>
               </div>
             )}
           </section>

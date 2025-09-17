@@ -218,7 +218,7 @@ export default function CustomerManagement() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Coin Balance</p>
+                <p className="text-sm font-medium text-gray-600">Total Rupee Balance</p>
                 <p className="text-3xl font-bold text-gray-900">{customers.reduce((total, c) => total + c.coinBalance, 0).toLocaleString()}</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -363,7 +363,7 @@ export default function CustomerManagement() {
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">NAME</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">EMAIL</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">PHONE</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">COIN BALANCE</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">RUPEE BALANCE</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">STATUS</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER HISTORY</th>
                   </tr>

@@ -165,6 +165,29 @@ export default function RedeemCodesPage() {
     }
   }
 
+  const deleteCode = async (id: string, codeTitle: string) => {
+    if (!confirm(`Are you sure you want to delete the code "${codeTitle}"? This action cannot be undone and users will no longer be able to redeem this code.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/redeem-codes?id=${id}`, {
+        method: 'DELETE'
+      })
+
+      const result = await response.json()
+      if (result.success) {
+        alert('Redeem code deleted successfully!')
+        fetchRedeemCodes()
+      } else {
+        alert('Error: ' + (result.error || 'Failed to delete code'))
+      }
+    } catch (error) {
+      console.error('Failed to delete code:', error)
+      alert('Network error: Failed to delete code')
+    }
+  }
+
   const filteredCodes = redeemCodes.filter(
     (code) =>
       code.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -444,6 +467,14 @@ export default function RedeemCodesPage() {
                             onClick={() => toggleCodeStatus(code.id, code.isActive)}
                           >
                             {code.isActive ? "Deactivate" : "Activate"}
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="text-xs px-2"
+                            onClick={() => deleteCode(code.id, code.title)}
+                          >
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>

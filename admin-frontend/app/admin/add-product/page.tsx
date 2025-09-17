@@ -211,7 +211,7 @@ export default function AddProductPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-600">Price (coins) *</label>
+                <label className="text-sm font-medium text-gray-600">Price (rupee) *</label>
                 <Input
                   type="number"
                   step="0.01"

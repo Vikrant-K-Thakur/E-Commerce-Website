@@ -105,3 +105,30 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Operation failed: ' + error.message })
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Code ID is required' })
+    }
+    
+    const db = await connectDB()
+    if (!db) {
+      return NextResponse.json({ success: false, error: 'Database connection failed' })
+    }
+
+    const result = await db.collection('redeem_codes').deleteOne({ id })
+    
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ success: false, error: 'Code not found' })
+    }
+
+    return NextResponse.json({ success: true, message: 'Redeem code deleted successfully' })
+  } catch (error) {
+    console.error('API Error:', error)
+    return NextResponse.json({ success: false, error: 'Operation failed: ' + error.message })
+  }
+}
