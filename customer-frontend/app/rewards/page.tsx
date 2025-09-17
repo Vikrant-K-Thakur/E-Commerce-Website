@@ -341,7 +341,7 @@ export default function RewardsPage() {
                               <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
                                 reward.type === 'discount' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                               }`}>
-                                {reward.type === 'discount' ? `${reward.value}% OFF` : `${reward.value} Coins`}
+                                {reward.type === 'discount' ? `${reward.value}% OFF` : `${reward.value} ₹`}
                               </div>
                             </div>
                             {reward.expires_at && (

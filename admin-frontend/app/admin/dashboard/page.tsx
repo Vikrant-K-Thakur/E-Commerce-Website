@@ -91,11 +91,11 @@ const DashboardExportDialog = ({ dashboardData, open, onOpenChange }: { dashboar
   <div class="kpis">
     <div class="kpi">
       <h4>Total Revenue</h4>
-      <p>${kpis.totalRevenue.toLocaleString()} coins</p>
+      <p>${kpis.totalRevenue.toLocaleString()} ₹</p>
     </div>
     <div class="kpi">
       <h4>Average Order Value</h4>
-      <p>${kpis.avgOrderValue.toLocaleString()} coins</p>
+      <p>${kpis.avgOrderValue.toLocaleString()} ₹</p>
     </div>
     <div class="kpi">
       <h4>Conversion Rate</h4>
@@ -113,7 +113,7 @@ const DashboardExportDialog = ({ dashboardData, open, onOpenChange }: { dashboar
       <thead>
         <tr>
           <th>Month</th>
-          <th>Revenue (Coins)</th>
+          <th>Revenue (₹)</th>
         </tr>
       </thead>
       <tbody>
@@ -164,7 +164,7 @@ const DashboardExportDialog = ({ dashboardData, open, onOpenChange }: { dashboar
         <tr>
           <th>Product Name</th>
           <th>Sales</th>
-          <th>Revenue (Coins)</th>
+          <th>Revenue (₹)</th>
         </tr>
       </thead>
       <tbody>
@@ -201,7 +201,7 @@ const DashboardExportDialog = ({ dashboardData, open, onOpenChange }: { dashboar
 
   <div class="section">
     <h3>Inventory Overview</h3>
-    <p><strong>Total Inventory Value:</strong> ${inventory.totalValue.toLocaleString()} coins</p>
+    <p><strong>Total Inventory Value:</strong> ${inventory.totalValue.toLocaleString()} ₹</p>
     <h4>Low Stock Products:</h4>
     <table>
       <thead>
@@ -377,7 +377,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-3xl font-bold text-gray-900">{kpis.totalRevenue.toLocaleString()} coins</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.totalRevenue.toLocaleString()} ₹</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-blue-600" />
@@ -394,7 +394,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg. Order Value</p>
-                <p className="text-3xl font-bold text-gray-900">{kpis.avgOrderValue.toLocaleString()} coins</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.avgOrderValue.toLocaleString()} ₹</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <ShoppingCart className="w-6 h-6 text-green-600" />
@@ -459,10 +459,10 @@ export default function AdminDashboard() {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fill: "#6b7280" }}
-                    tickFormatter={(value) => `${value / 1000}k coins`}
+                    tickFormatter={(value) => `${value / 1000}k ₹`}
                   />
                   <Tooltip
-                    formatter={(value) => [`${value.toLocaleString()} coins`, "Revenue"]}
+                    formatter={(value) => [`${value.toLocaleString()} ₹`, "Revenue"]}
                     labelStyle={{ color: "#374151" }}
                     contentStyle={{
                       backgroundColor: "white",
@@ -549,7 +549,7 @@ export default function AdminDashboard() {
                     <p className="text-sm text-gray-900">{product.sales.toLocaleString()}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{product.revenue.toLocaleString()} coins</p>
+                    <p className="text-sm font-medium text-gray-900">{product.revenue.toLocaleString()} ₹</p>
                   </div>
                 </div>
               ))}
@@ -615,7 +615,7 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-600">Total Inventory Value:</span>
-                  <span className="text-lg font-bold text-gray-900">{inventory.totalValue.toLocaleString()} coins</span>
+                  <span className="text-lg font-bold text-gray-900">{inventory.totalValue.toLocaleString()} ₹</span>
                 </div>
               </div>
 

@@ -275,7 +275,7 @@ export default function CustomerManagement() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="discount">Discount (%)</SelectItem>
-                          <SelectItem value="coins">Gift Coins</SelectItem>
+                          <SelectItem value="coins">Gift ₹</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -286,7 +286,7 @@ export default function CustomerManagement() {
                         type="number"
                         value={rewardValue}
                         onChange={(e) => setRewardValue(e.target.value)}
-                        placeholder={rewardType === 'discount' ? 'Enter percentage' : 'Enter coins amount'}
+                        placeholder={rewardType === 'discount' ? 'Enter percentage' : 'Enter amount(₹) '}
                       />
                     </div>
                     
@@ -394,7 +394,7 @@ export default function CustomerManagement() {
                         <td className="py-4 px-4 text-gray-600">{customer.email}</td>
                         <td className="py-4 px-4 text-gray-600">{customer.phone}</td>
                         <td className="py-4 px-4">
-                          <span className="font-medium text-gray-900">{customer.coinBalance.toLocaleString()} coins</span>
+                          <span className="font-medium text-gray-900">{customer.coinBalance.toLocaleString()} ₹</span>
                         </td>
                         <td className="py-4 px-4">
                           <Badge
@@ -488,7 +488,7 @@ export default function CustomerManagement() {
                         >
                           {order.status}
                         </Badge>
-                        <p className="text-lg font-semibold text-gray-900 mt-1">{order.total} coins</p>
+                        <p className="text-lg font-semibold text-gray-900 mt-1">{order.total} ₹</p>
                       </div>
                     </div>
                     
@@ -505,10 +505,10 @@ export default function CustomerManagement() {
                           />
                           <div className="flex-1">
                             <p className="font-medium text-sm">{item.name}</p>
-                            <p className="text-xs text-gray-600">Qty: {item.quantity} × {item.price} coins</p>
+                            <p className="text-xs text-gray-600">Qty: {item.quantity} × {item.price} ₹</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium text-sm">{(item.quantity * item.price)} coins</p>
+                            <p className="font-medium text-sm">{(item.quantity * item.price)} ₹</p>
                           </div>
                         </div>
                       ))}

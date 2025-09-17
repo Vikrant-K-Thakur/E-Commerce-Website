@@ -189,14 +189,14 @@ export default function OrdersPage() {
                           <span className="text-foreground">
                             {item.name} x{item.quantity}
                           </span>
-                          <span className="text-muted-foreground">{item.price} coins</span>
+                          <span className="text-muted-foreground">{item.price} ₹</span>
                         </div>
                       ))}
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t">
                       <div className="text-sm text-muted-foreground">Payment: Wallet</div>
-                      <div className="font-semibold">Total: {order.totalAmount} coins</div>
+                      <div className="font-semibold">Total: {order.totalAmount} ₹</div>
                     </div>
 
                     {/* Cancel Order Button */}

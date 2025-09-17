@@ -230,15 +230,13 @@ export default function HomePage() {
                     product.available === false ? 'border-red-200 bg-red-50' : ''
                   }`}>
                     <div className="relative">
-                      <Link href={`/products/${product.id}`}>
-                        <img
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          className={`w-full h-40 lg:h-48 object-cover cursor-pointer ${
-                            product.available === false ? 'opacity-60 grayscale' : ''
-                          }`}
-                        />
-                      </Link>
+                      <img
+                        src={product.image || "/placeholder.svg"}
+                        alt={product.name}
+                        className={`w-full h-40 lg:h-48 object-cover ${
+                          product.available === false ? 'opacity-60 grayscale' : ''
+                        }`}
+                      />
                       {product.available === false && (
                         <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
                           <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
@@ -259,7 +257,7 @@ export default function HomePage() {
                       <div className="flex items-center gap-2">
                         <span className={`font-semibold ${
                           product.available === false ? 'text-red-600' : ''
-                        }`}>₹{product.price}</span>
+                        }`}>{product.price} ₹</span>
                         {product.available === false && (
                           <span className="text-xs text-red-500 font-medium">Unavailable</span>
                         )}
@@ -319,15 +317,13 @@ export default function HomePage() {
                     product.available === false ? 'border-red-200 bg-red-50' : ''
                   }`}>
                     <div className="relative">
-                      <Link href={`/products/${product.id}`}>
-                        <img
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          className={`w-full h-40 lg:h-48 object-cover cursor-pointer ${
-                            product.available === false ? 'opacity-60 grayscale' : ''
-                          }`}
-                        />
-                      </Link>
+                      <img
+                        src={product.image || "/placeholder.svg"}
+                        alt={product.name}
+                        className={`w-full h-40 lg:h-48 object-cover ${
+                          product.available === false ? 'opacity-60 grayscale' : ''
+                        }`}
+                      />
                       {product.available === false && (
                         <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
                           <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
@@ -348,7 +344,7 @@ export default function HomePage() {
                       <div className="flex items-center gap-2">
                         <span className={`font-semibold ${
                           product.available === false ? 'text-red-600' : ''
-                        }`}>₹{product.price}</span>
+                        }`}>{product.price} ₹</span>
                         {product.available === false && (
                           <span className="text-xs text-red-500 font-medium">Unavailable</span>
                         )}

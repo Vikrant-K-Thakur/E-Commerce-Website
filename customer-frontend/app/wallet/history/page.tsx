@@ -121,7 +121,7 @@ export default function WalletHistoryPage() {
                     </div>
                     <div className="text-right">
                       <p className={`font-semibold ${transaction.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} Coins
+                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} ₹
                       </p>
                     </div>
                   </div>
@@ -186,7 +186,7 @@ export default function WalletHistoryPage() {
                         </div>
                         <div className="text-right">
                           <p className={`font-semibold ${transaction.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                            {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} Coins
+                            {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} ₹
                           </p>
                         </div>
                       </div>

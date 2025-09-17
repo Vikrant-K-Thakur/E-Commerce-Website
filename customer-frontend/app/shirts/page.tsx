@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Search, Heart } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -158,13 +159,15 @@ export default function ViewAllProductsPage() {
                 product.available === false ? 'border-red-200 bg-red-50' : ''
               }`}>
                 <div className="relative">
-                  <img
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
-                    className={`w-full h-40 lg:h-48 object-cover ${
-                      product.available === false ? 'opacity-60 grayscale' : ''
-                    }`}
-                  />
+                  <Link href={`/products/${product.id}`}>
+                    <img
+                      src={product.image || "/placeholder.svg"}
+                      alt={product.name}
+                      className={`w-full h-40 lg:h-48 object-cover cursor-pointer ${
+                        product.available === false ? 'opacity-60 grayscale' : ''
+                      }`}
+                    />
+                  </Link>
                   {product.available === false && (
                     <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
                       <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-medium">
@@ -192,7 +195,7 @@ export default function ViewAllProductsPage() {
                   <div className="flex items-center gap-2">
                     <span className={`font-semibold text-sm lg:text-base ${
                       product.available === false ? 'text-red-600' : ''
-                    }`}>{product.price} coins</span>
+                    }`}>₹{product.price}</span>
                     {product.available === false && (
                       <span className="text-xs text-red-500 font-medium">Unavailable</span>
                     )}

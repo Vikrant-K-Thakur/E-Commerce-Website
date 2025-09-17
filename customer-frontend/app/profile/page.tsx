@@ -134,10 +134,10 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Coin Balance</p>
-                <p className="text-2xl font-bold text-foreground">{loading ? '...' : coinBalance} Coins</p>
+                <p className="text-2xl font-bold text-foreground">{loading ? '...' : coinBalance} ₹</p>
                 <Link href="/wallet/add-funds">
                   <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                    Add Coins
+                    Add ₹
                   </Button>
                 </Link>
               </div>

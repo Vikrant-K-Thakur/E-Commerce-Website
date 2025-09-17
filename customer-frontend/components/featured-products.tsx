@@ -121,7 +121,7 @@ export function FeaturedProducts() {
               <div className="flex items-center gap-2">
                 <span className={`font-semibold ${
                   product.available === false ? 'text-red-600' : 'text-foreground'
-                }`}>{product.price} coins</span>
+                }`}>₹{product.price}</span>
                 {product.available === false && (
                   <span className="text-xs text-red-500 font-medium">Unavailable</span>
                 )}

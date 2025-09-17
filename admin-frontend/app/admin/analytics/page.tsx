@@ -90,7 +90,7 @@ const AnalyticsExportDialog = ({ analyticsData, open, onOpenChange }: { analytic
   <div class="metrics">
     <div class="metric">
       <h4>Total Revenue</h4>
-      <p>${keyMetrics.totalRevenue.toLocaleString()} coins</p>
+      <p>${keyMetrics.totalRevenue.toLocaleString()} ₹</p>
     </div>
     <div class="metric">
       <h4>Total Orders</h4>
@@ -112,7 +112,7 @@ const AnalyticsExportDialog = ({ analyticsData, open, onOpenChange }: { analytic
       <thead>
         <tr>
           <th>Month</th>
-          <th>Revenue (Coins)</th>
+          <th>Revenue (₹)</th>
           <th>Orders</th>
           <th>Customers</th>
         </tr>
@@ -157,7 +157,7 @@ const AnalyticsExportDialog = ({ analyticsData, open, onOpenChange }: { analytic
         <thead>
           <tr>
             <th>Category</th>
-            <th>Sales (Coins)</th>
+            <th>Sales (₹)</th>
             <th>Units</th>
           </tr>
         </thead>
@@ -202,7 +202,7 @@ const AnalyticsExportDialog = ({ analyticsData, open, onOpenChange }: { analytic
       <thead>
         <tr>
           <th>Product Name</th>
-          <th>Revenue (Coins)</th>
+          <th>Revenue (₹)</th>
           <th>Units Sold</th>
           <th>Rating</th>
         </tr>
@@ -381,7 +381,7 @@ export default function ReportsAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-3xl font-bold text-gray-900">{keyMetrics.totalRevenue.toLocaleString()} coins</p>
+                <p className="text-3xl font-bold text-gray-900">{keyMetrics.totalRevenue.toLocaleString()} ₹</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-blue-600" />
@@ -453,7 +453,7 @@ export default function ReportsAnalytics() {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fill: "#6b7280" }}
-                    tickFormatter={(value) => `${value / 1000}k coins`}
+                    tickFormatter={(value) => `${value / 1000}k ₹`}
                   />
                   <YAxis
                     yAxisId="orders"
@@ -464,7 +464,7 @@ export default function ReportsAnalytics() {
                   />
                   <Tooltip
                     formatter={(value, name) => [
-                      name === "revenue" ? `${value.toLocaleString()} coins` : value,
+                      name === "revenue" ? `${value.toLocaleString()} ₹` : value,
                       name === "revenue" ? "Revenue" : "Orders",
                     ]}
                     labelStyle={{ color: "#374151" }}
@@ -558,7 +558,7 @@ export default function ReportsAnalytics() {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fill: "#6b7280" }}
-                    tickFormatter={(value) => `${value / 1000}k coins`}
+                    tickFormatter={(value) => `${value / 1000}k ₹`}
                   />
                   <YAxis
                     type="category"
@@ -569,7 +569,7 @@ export default function ReportsAnalytics() {
                     width={100}
                   />
                   <Tooltip
-                    formatter={(value) => [`${value.toLocaleString()} coins`, "Sales"]}
+                    formatter={(value) => [`${value.toLocaleString()} ₹`, "Sales"]}
                     labelStyle={{ color: "#374151" }}
                     contentStyle={{
                       backgroundColor: "white",
@@ -645,7 +645,7 @@ export default function ReportsAnalytics() {
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <span className="font-medium text-gray-900">{product.revenue.toLocaleString()} coins</span>
+                      <span className="font-medium text-gray-900">{product.revenue.toLocaleString()} ₹</span>
                     </td>
                     <td className="py-4 px-4">
                       <span className="text-gray-600">{product.units.toLocaleString()}</span>

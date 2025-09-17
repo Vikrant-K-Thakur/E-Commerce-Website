@@ -89,7 +89,7 @@ export default function AddFundsPage() {
         amount: parseFloat(amount) * 100,
         currency: 'INR',
         name: 'Your E-Commerce Store',
-        description: `Add ${coinsToReceive} Coins to Wallet`,
+        description: `Add ${coinsToReceive} ₹ to Wallet`,
         order_id: orderResult.orderId,
         handler: async function (response: any) {
           // Payment successful
@@ -116,7 +116,7 @@ export default function AddFundsPage() {
               
               toast({
                 title: "Payment Successful!",
-                description: `${coinsToReceive} coins added to your wallet`,
+                description: `${coinsToReceive} ₹ added to your wallet`,
               })
               
               // Reset form after success
@@ -183,11 +183,11 @@ export default function AddFundsPage() {
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
             <p className="text-gray-600 mb-4">
-              {amount} coins has been added to your wallet
+              {amount} ₹ has been added to your wallet
             </p>
             <div className="bg-blue-50 p-4 rounded-lg mb-6">
               <p className="text-sm text-gray-600">Coins Received</p>
-              <p className="text-2xl font-bold text-blue-600">{coinsToReceive} Coins</p>
+              <p className="text-2xl font-bold text-blue-600">{coinsToReceive} ₹</p>
             </div>
             <Link href="/wallet">
               <Button className="w-full" onClick={() => window.location.reload()}>
@@ -226,7 +226,7 @@ export default function AddFundsPage() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900">Conversion Rate</p>
-                  <p className="text-sm text-gray-600">₹1 = {conversionRate} Coins</p>
+                  <p className="text-sm text-gray-600">₹1 = {conversionRate} ₹</p>
                 </div>
               </div>
               <div className="text-right">
@@ -243,7 +243,7 @@ export default function AddFundsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Amount (coins)</label>
+              <label className="text-sm text-muted-foreground">Amount (₹)</label>
               <div className="relative">
                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -266,7 +266,7 @@ export default function AddFundsPage() {
                   onClick={() => handleQuickAmount(value)}
                   className="text-sm"
                 >
-                  {value} coins
+                  {value} ₹
                 </Button>
               ))}
             </div>
@@ -278,7 +278,7 @@ export default function AddFundsPage() {
                   <span className="text-sm text-gray-600">You will receive:</span>
                   <div className="flex items-center gap-1">
                     <Coins className="w-4 h-4 text-green-600" />
-                    <span className="font-semibold text-green-700">{coinsToReceive} Coins</span>
+                    <span className="font-semibold text-green-700">{coinsToReceive} ₹</span>
                   </div>
                 </div>
               </div>

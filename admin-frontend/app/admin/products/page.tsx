@@ -267,12 +267,12 @@ export default function ProductManagement() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Price (coins) *</Label>
+                        <Label>Price (₹) *</Label>
                         <Input
                           type="number"
                           value={formData.price}
                           onChange={(e) => setFormData({...formData, price: e.target.value})}
-                          placeholder="Enter price in coins"
+                          placeholder="Enter price in ₹"
                         />
                       </div>
                       <div>
@@ -433,7 +433,7 @@ export default function ProductManagement() {
                         <span className="text-gray-600">{product.category}</span>
                       </td>
                       <td className="py-4 px-4">
-                        <span className="font-medium text-gray-900">{product.price} coins</span>
+                        <span className="font-medium text-gray-900">{product.price} ₹</span>
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex flex-wrap gap-1">
@@ -601,12 +601,12 @@ export default function ProductManagement() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Price (coins) *</Label>
+                <Label>Price (₹) *</Label>
                 <Input
                   type="number"
                   value={formData.price}
                   onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  placeholder="Enter price in coins"
+                  placeholder="Enter price(₹) "
                 />
               </div>
               <div>

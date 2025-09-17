@@ -85,7 +85,7 @@ export default function RedeemPage() {
         <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-0">
           <CardContent className="p-4 text-center">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Available Coins</p>
+              <p className="text-sm text-muted-foreground">Available money(₹)</p>
               <p className="text-2xl font-bold text-primary">{userCoins}</p>
             </div>
           </CardContent>
@@ -96,8 +96,8 @@ export default function RedeemPage() {
           <CardContent className="p-4 space-y-3">
             <h3 className="font-semibold text-foreground">How Redemption Works</h3>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <p>• Coins are automatically applied as discounts at checkout</p>
-              <p>• 100 coins = $1 discount value</p>
+              <p>• ₹ are automatically applied as discounts at checkout</p>
+              <p>• 10 = ₹1 discount value</p>
               <p>• Rewards can be combined with other offers</p>
               <p>• Redeemed rewards expire after 30 days</p>
             </div>
@@ -139,7 +139,7 @@ export default function RedeemPage() {
 
                       <div className="flex items-center gap-3">
                         <Badge variant="outline" className="text-xs">
-                          {reward.coins} coins
+                          {reward.coins} ₹
                         </Badge>
                         <span className="text-sm text-muted-foreground">(${reward.value} value)</span>
                       </div>
@@ -149,7 +149,7 @@ export default function RedeemPage() {
                         className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         disabled={!canRedeemReward}
                       >
-                        {canRedeemReward ? "Redeem Now" : `Need ${reward.coins - userCoins} more coins`}
+                        {canRedeemReward ? "Redeem Now" : `Need ${reward.coins - userCoins} more ₹`}
                       </Button>
                     </div>
                   </div>
@@ -164,9 +164,9 @@ export default function RedeemPage() {
           <CardContent className="p-4 text-center space-y-3">
             <Gift className="w-12 h-12 text-muted-foreground mx-auto" />
             <div className="space-y-1">
-              <h3 className="font-semibold text-foreground">Need More Coins?</h3>
+              <h3 className="font-semibold text-foreground">Need More rupee(₹)?</h3>
               <p className="text-sm text-muted-foreground">
-                Keep shopping and completing activities to earn more coins
+                Keep shopping and completing activities to earn more ₹
               </p>
             </div>
             <Link href="/rewards">

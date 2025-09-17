@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       const notification = {
         customerEmail: email,
         title: 'Order Cancelled',
-        message: `Your order ${orderId} has been cancelled and ${refundAmount} coins have been refunded to your wallet.`,
+        message: `Your order ${orderId} has been cancelled and ${refundAmount} ₹ have been refunded to your wallet.`,
         type: 'order',
         orderId,
         read: false,

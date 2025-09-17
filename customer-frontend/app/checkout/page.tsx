@@ -26,14 +26,14 @@ const deliveryOptions = [
     name: "Express Delivery",
     time: "Express by 2 business days",
     price: 14.5,
-    description: "14.50 coins",
+    description: "14.50 ₹",
   },
   {
     id: "same-day",
     name: "Same Day Delivery",
     time: "Same day delivery",
     price: 29.0,
-    description: "29.00 coins",
+    description: "29.00 ₹",
   },
 ]
 
@@ -199,7 +199,7 @@ export default function CheckoutPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <span className="font-medium">Cash on Delivery</span>
-              <span className="text-sm text-muted-foreground">0 coins on Delivery</span>
+              <span className="text-sm text-muted-foreground">0 ₹ on Delivery</span>
             </div>
           </CardContent>
         </Card>
@@ -223,14 +223,14 @@ export default function CheckoutPage() {
 
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span>{shipping === 0 ? "Free" : `${shipping.toFixed(2)}`} coins</span>
+                <span>{shipping === 0 ? "Free" : `${shipping.toFixed(2)}`} ₹</span>
               </div>
 
               <Separator />
 
               <div className="flex justify-between font-semibold text-base">
                 <span>Total Amount</span>
-                <span>$ {total.toFixed(2)} coins</span>
+                <span>$ {total.toFixed(2)} ₹</span>
               </div>
             </div>
           </CardContent>

@@ -71,7 +71,7 @@ export default function CartPage() {
     if (!user?.email) return
     
     if (walletBalance < total) {
-      alert(`Insufficient wallet balance. You need ${total - walletBalance} more coins. Please add funds to your wallet.`)
+      alert(`Insufficient wallet balance. You need ${total - walletBalance} more ₹. Please add funds to your wallet.`)
       return
     }
 
@@ -115,7 +115,7 @@ export default function CartPage() {
         setWalletBalance(data.newBalance)
       } else {
         if (data.error === 'Insufficient wallet balance') {
-          alert(`Insufficient wallet balance. You need ${data.requiredAmount - data.currentBalance} more coins. Please add funds to your wallet.`)
+          alert(`Insufficient wallet balance. You need ${data.requiredAmount - data.currentBalance} more ₹. Please add funds to your wallet.`)
         } else {
           alert('Failed to place order: ' + data.error)
         }
@@ -166,7 +166,7 @@ export default function CartPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">{item.price} coins</span>
+                        <span className="font-semibold">{item.price} ₹</span>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -269,13 +269,13 @@ export default function CartPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal ({totalItems} items)</span>
-                  <span>{totalPrice.toFixed(2)} coins</span>
+                  <span>{totalPrice.toFixed(2)} ₹</span>
                 </div>
 
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount ({appliedCoupon?.value}%)</span>
-                    <span>-{discount.toFixed(2)} coins</span>
+                    <span>-{discount.toFixed(2)} ₹</span>
                   </div>
                 )}
 
@@ -283,7 +283,7 @@ export default function CartPage() {
 
                 <div className="flex justify-between font-semibold text-base">
                   <span>Total Amount</span>
-                  <span>{total.toFixed(2)} coins</span>
+                  <span>{total.toFixed(2)} ₹</span>
                 </div>
               </div>
 
@@ -293,13 +293,13 @@ export default function CartPage() {
                     <Wallet className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-medium">Wallet Balance</span>
                   </div>
-                  <span className="font-semibold text-blue-600">{walletBalance.toFixed(2)} coins</span>
+                  <span className="font-semibold text-blue-600">{walletBalance.toFixed(2)} ₹</span>
                 </div>
                 
                 {walletBalance < total && (
                   <div className="p-3 bg-red-50 rounded-lg border border-red-200">
                     <p className="text-sm text-red-700">
-                      Insufficient balance. You need {(total - walletBalance).toFixed(2)} more coins.
+                      Insufficient balance. You need {(total - walletBalance).toFixed(2)} more ₹.
                     </p>
                     <Link href="/wallet">
                       <Button size="sm" className="mt-2">

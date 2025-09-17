@@ -77,7 +77,7 @@ export default function WalletPage() {
           <CardContent className="p-6 text-center space-y-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Current Balance</p>
-              <p className="text-4xl font-bold text-foreground">{walletLoading ? 'Loading...' : `${coinBalance} Coins`}</p>
+              <p className="text-4xl font-bold text-foreground">{walletLoading ? 'Loading...' : `${coinBalance} ₹`}</p>
             </div>
 
             <div className="flex gap-3">
@@ -125,7 +125,7 @@ export default function WalletPage() {
                   onClick={() => handleQuickAmount(amount)}
                   className="text-xs"
                 >
-                  {amount.toFixed(0)} coins
+                  {amount.toFixed(0)} ₹
                 </Button>
               ))}
             </div>
@@ -177,7 +177,7 @@ export default function WalletPage() {
                     </div>
                     <div className="text-right">
                       <p className={`font-semibold ${transaction.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} Coins
+                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} ₹
                       </p>
                     </div>
                   </div>

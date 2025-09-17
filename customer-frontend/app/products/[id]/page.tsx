@@ -158,7 +158,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-bold text-foreground">${product.price}</span>
+            <span className="text-2xl font-bold text-foreground">₹{product.price}</span>
           </div>
 
           <Badge variant="secondary" className="bg-green-100 text-green-800">

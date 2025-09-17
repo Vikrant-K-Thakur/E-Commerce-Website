@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       type: 'coins',
       value: parseInt(coins),
       title: 'Funds Added Successfully',
-      description: `You have successfully added ${parseFloat(amount)} coins to your wallet and received ${parseInt(coins)} coins`,
+      description: `You have successfully added ${parseFloat(amount)} ₹ to your wallet and received ${parseInt(coins)} ₹`,
       customerEmail: email,
       isRead: false,
       created_at: new Date(),

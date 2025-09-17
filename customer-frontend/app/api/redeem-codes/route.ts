@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         type: redeemCode.type,
         value: redeemCode.value,
         title: `Code Redeemed: ${redeemCode.title}`,
-        description: `You successfully redeemed code "${code.toUpperCase()}" and received ${redeemCode.type === 'coins' ? `${redeemCode.value} coins` : `${redeemCode.value}% discount`}`,
+        description: `You successfully redeemed code "${code.toUpperCase()}" and received ${redeemCode.type === 'coins' ? `${redeemCode.value} ₹` : `${redeemCode.value}% discount`}`,
         customerEmail: email,
         isRead: false,
         created_at: new Date(),
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       }
 
       const successMessage = redeemCode.type === 'coins' 
-        ? `${redeemCode.value} coins added to your wallet!` 
+        ? `${redeemCode.value} ₹ added to your wallet!` 
         : `${redeemCode.value}% discount applied to your account!`
       return NextResponse.json({ 
         success: true, 

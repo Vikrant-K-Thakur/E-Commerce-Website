@@ -145,11 +145,11 @@ const AnalyticsDialog = ({ orders, open, onOpenChange }: { orders: Order[], open
       </div>
       <div class="metric">
         <h4>Total Revenue</h4>
-        <p>${totalRevenue.toFixed(2)} coins</p>
+        <p>${totalRevenue.toFixed(2)} ₹</p>
       </div>
       <div class="metric">
         <h4>Average Order Value</h4>
-        <p>${avgOrderValue.toFixed(2)} coins</p>
+        <p>${avgOrderValue.toFixed(2)} ₹</p>
       </div>
       <div class="metric">
         <h4>Delivered Orders</h4>
@@ -225,7 +225,7 @@ const AnalyticsDialog = ({ orders, open, onOpenChange }: { orders: Order[], open
         <th>Email</th>
         <th>Date</th>
         <th>Time</th>
-        <th>Total (Coins)</th>
+        <th>Total (₹)</th>
         <th>Status</th>
         <th>Payment Method</th>
       </tr>
@@ -620,7 +620,7 @@ export default function OrderManagement() {
                             <span className="text-gray-900 font-medium">{order.customer}</span>
                             {order.customerCoinBalance > 0 && (
                               <div className="text-xs text-green-600">
-                                Balance: {order.customerCoinBalance.toFixed(2)} coins
+                                Balance: {order.customerCoinBalance.toFixed(2)} ₹
                               </div>
                             )}
                           </div>
@@ -639,7 +639,7 @@ export default function OrderManagement() {
                         </td>
                         <td className="py-4 px-4">
                           <div>
-                            <span className="font-medium text-gray-900">{order.total.toFixed(2)} coins</span>
+                            <span className="font-medium text-gray-900">{order.total.toFixed(2)} ₹</span>
                             {order.discountAmount > 0 && (
                               <div className="text-xs text-red-600">
                                 Discount: -{order.discountAmount.toFixed(2)}
@@ -685,7 +685,7 @@ export default function OrderManagement() {
                                         </div>
                                         <div>
                                           <Label className="text-sm font-medium text-gray-600">Wallet Balance</Label>
-                                          <p className="font-medium text-green-600">{selectedOrder.customerCoinBalance.toFixed(2)} coins</p>
+                                          <p className="font-medium text-green-600">{selectedOrder.customerCoinBalance.toFixed(2)} ₹</p>
                                         </div>
                                         <div className="col-span-2">
                                           <Label className="text-sm font-medium text-gray-600">Address</Label>
@@ -720,15 +720,15 @@ export default function OrderManagement() {
                                         </div>
                                         <div>
                                           <Label className="text-sm font-medium text-gray-600">Subtotal</Label>
-                                          <p className="text-gray-900">{selectedOrder.subtotal.toFixed(2)} coins</p>
+                                          <p className="text-gray-900">{selectedOrder.subtotal.toFixed(2)} ₹</p>
                                         </div>
                                         <div>
                                           <Label className="text-sm font-medium text-gray-600">Discount</Label>
-                                          <p className="text-red-600">-{selectedOrder.discountAmount.toFixed(2)} coins</p>
+                                          <p className="text-red-600">-{selectedOrder.discountAmount.toFixed(2)} ₹</p>
                                         </div>
                                         <div>
                                           <Label className="text-sm font-medium text-gray-600">Total Amount</Label>
-                                          <p className="font-bold text-lg text-gray-900">{selectedOrder.total.toFixed(2)} coins</p>
+                                          <p className="font-bold text-lg text-gray-900">{selectedOrder.total.toFixed(2)} ₹</p>
                                         </div>
                                         <div>
                                           <Label className="text-sm font-medium text-gray-600">Status</Label>
@@ -758,11 +758,11 @@ export default function OrderManagement() {
                                                 <p className="text-sm text-gray-600">
                                                   {item.productId && `Product ID: ${item.productId} | `}
                                                   {item.size && `Size: ${item.size} | `}
-                                                  Qty: {item.quantity} | Price: {item.price} coins
+                                                  Qty: {item.quantity} | Price: {item.price} ₹
                                                 </p>
                                               </div>
                                               <p className="font-medium text-gray-900">
-                                                {(item.price * item.quantity).toFixed(2)} coins
+                                                {(item.price * item.quantity).toFixed(2)} ₹
                                               </p>
                                             </div>
                                           ))}
@@ -928,7 +928,7 @@ export default function OrderManagement() {
                   <div>
                     <p className="font-medium text-gray-900">{order.id}</p>
                     <p className="text-sm text-gray-600">
-                      {order.customer} - {order.total.toFixed(2)} coins
+                      {order.customer} - {order.total.toFixed(2)} ₹
                     </p>
                   </div>
                   <Badge className="bg-purple-100 text-purple-800">Refunded</Badge>
@@ -957,7 +957,7 @@ export default function OrderManagement() {
                   <div>
                     <p className="font-medium text-gray-900">{order.id}</p>
                     <p className="text-sm text-gray-600">
-                      {order.customer} - {order.total.toFixed(2)} coins
+                      {order.customer} - {order.total.toFixed(2)} ₹
                     </p>
                   </div>
                   {getStatusBadge(order.status)}

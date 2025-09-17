@@ -339,7 +339,7 @@ export default function AddProductPage() {
                     </TableCell>
                     <TableCell className="font-medium text-gray-900">{product.name}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">{product.price} coins</Badge>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">{product.price} ₹</Badge>
                     </TableCell>
                     <TableCell className="text-gray-600">{product.category || 'N/A'}</TableCell>
                     <TableCell>
