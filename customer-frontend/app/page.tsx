@@ -124,7 +124,7 @@ export default function HomePage() {
         productId: product.productId,
         name: product.name,
         price: product.price,
-        image: product.image,
+        image: (product.images && product.images[0]) || product.image,
         quantity: 1
       })
     }
@@ -232,7 +232,7 @@ export default function HomePage() {
                     <div className="relative">
                       <Link href={`/products/${product.id}`}>
                         <img
-                          src={product.image || "/placeholder.svg"}
+                          src={(product.images && product.images[0]) || product.image || "/placeholder.svg"}
                           alt={product.name}
                           className={`w-full h-40 lg:h-48 object-cover cursor-pointer ${
                             product.available === false ? 'opacity-60 grayscale' : ''
@@ -321,7 +321,7 @@ export default function HomePage() {
                     <div className="relative">
                       <Link href={`/products/${product.id}`}>
                         <img
-                          src={product.image || "/placeholder.svg"}
+                          src={(product.images && product.images[0]) || product.image || "/placeholder.svg"}
                           alt={product.name}
                           className={`w-full h-40 lg:h-48 object-cover cursor-pointer ${
                             product.available === false ? 'opacity-60 grayscale' : ''

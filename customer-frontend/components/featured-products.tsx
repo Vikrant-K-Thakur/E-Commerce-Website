@@ -18,6 +18,7 @@ interface Product {
   price: number
   description: string
   image: string
+  images?: string[]
   sizes?: any[]
   available?: boolean
 }
@@ -57,7 +58,7 @@ export function FeaturedProducts() {
         productId: product.productId,
         name: product.name,
         price: product.price,
-        image: product.image
+        image: (product.images && product.images[0]) || product.image
       })
     }
   }
@@ -70,7 +71,7 @@ export function FeaturedProducts() {
         id: product.id,
         name: product.name,
         price: product.price,
-        image: product.image
+        image: (product.images && product.images[0]) || product.image
       })
     }
   }
@@ -85,7 +86,7 @@ export function FeaturedProducts() {
             <div className="relative">
               <Link href={`/products/${product.id}`}>
                 <img
-                  src={product.image || "/placeholder.svg"}
+                  src={(product.images && product.images[0]) || product.image || "/placeholder.svg"}
                   alt={product.name}
                   className={`w-full h-40 sm:h-48 object-cover ${
                     product.available === false ? 'opacity-60 grayscale' : ''

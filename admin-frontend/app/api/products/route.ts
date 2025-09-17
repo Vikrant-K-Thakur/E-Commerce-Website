@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     if (action === 'add') {
       // Validate required fields
-      if (!data.productId || !data.name || !data.price || !data.description || !data.image) {
+      if (!data.productId || !data.name || !data.price || !data.description || (!data.images?.length && !data.image)) {
         return NextResponse.json({ success: false, error: 'All required fields must be filled' })
       }
 
@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
         name: data.name,
         price: parseFloat(data.price),
         description: data.description,
-        image: data.image,
+        images: data.images || [data.image],
+        image: data.images?.[0] || data.image,
         category: data.category || '',
         sizes: data.sizes || [],
         available: data.available !== false,
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     if (action === 'update') {
       // Validate required fields
-      if (!data.id || !data.name || !data.price || !data.description || !data.image) {
+      if (!data.id || !data.name || !data.price || !data.description || (!data.images?.length && !data.image)) {
         return NextResponse.json({ success: false, error: 'All required fields must be filled' })
       }
 
@@ -85,7 +86,8 @@ export async function POST(request: NextRequest) {
         name: data.name,
         price: parseFloat(data.price),
         description: data.description,
-        image: data.image,
+        images: data.images || [data.image],
+        image: data.images?.[0] || data.image,
         category: data.category || '',
         sizes: data.sizes || [],
         available: data.available !== false,

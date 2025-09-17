@@ -29,7 +29,7 @@ export default function AddProductPage() {
     name: '',
     price: '',
     description: '',
-    image: '',
+    images: [''],
     category: '',
     sizes: '',
     available: true
@@ -72,7 +72,7 @@ export default function AddProductPage() {
           name: formData.name,
           price: parseFloat(formData.price),
           description: formData.description,
-          image: formData.image,
+          images: formData.images.filter(img => img.trim()),
           category: formData.category,
           sizes: sizesArray,
           available: formData.available
@@ -81,7 +81,7 @@ export default function AddProductPage() {
 
       const result = await response.json()
       if (result.success) {
-        setFormData({ productId: '', name: '', price: '', description: '', image: '', category: '', sizes: '', available: true })
+        setFormData({ productId: '', name: '', price: '', description: '', images: [''], category: '', sizes: '', available: true })
         setEditingProduct(null)
         fetchProducts()
         toast({
@@ -142,7 +142,7 @@ export default function AddProductPage() {
       name: product.name,
       price: product.price.toString(),
       description: product.description,
-      image: product.image,
+      images: product.images || [product.image || ''],
       category: product.category || '',
       sizes: product.sizes?.join(', ') || '',
       available: product.available !== false
@@ -152,7 +152,7 @@ export default function AddProductPage() {
 
   const handleCancelEdit = () => {
     setEditingProduct(null)
-    setFormData({ productId: '', name: '', price: '', description: '', image: '', category: '', sizes: '', available: true })
+    setFormData({ productId: '', name: '', price: '', description: '', images: [''], category: '', sizes: '', available: true })
     setError('')
   }
 
@@ -241,13 +241,46 @@ export default function AddProductPage() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Image URL *</label>
-              <Input
-                value={formData.image}
-                onChange={(e) => setFormData({...formData, image: e.target.value})}
-                placeholder="Enter image URL"
-                required
-              />
+              <label className="text-sm font-medium text-gray-600">Image URLs *</label>
+              <div className="space-y-2">
+                {formData.images.map((image, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={image}
+                      onChange={(e) => {
+                        const newImages = [...formData.images]
+                        newImages[index] = e.target.value
+                        setFormData({...formData, images: newImages})
+                      }}
+                      placeholder={`Enter image URL ${index + 1}`}
+                      required={index === 0}
+                    />
+                    {index > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const newImages = formData.images.filter((_, i) => i !== index)
+                          setFormData({...formData, images: newImages})
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData({...formData, images: [...formData.images, '']})}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Another Image
+                </Button>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -324,7 +357,7 @@ export default function AddProductPage() {
                   <TableRow key={product.id}>
                     <TableCell>
                       <img
-                        src={product.image}
+                        src={product.images?.[0] || product.image}
                         alt={product.name}
                         className="w-12 h-12 object-cover rounded"
                         onError={(e) => {

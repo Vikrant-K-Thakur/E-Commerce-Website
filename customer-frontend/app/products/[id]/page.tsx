@@ -17,6 +17,7 @@ interface Product {
   price: number
   description: string
   image: string
+  images?: string[]
   category?: string
   sizes?: any[]
 }
@@ -49,6 +50,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const [product, setProduct] = useState<Product | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [selectedSize, setSelectedSize] = useState<string>("")
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const { addItem } = useCart()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
 
@@ -81,7 +83,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         productId: product.productId,
         name: product.name,
         price: product.price,
-        image: product.image,
+        image: (product.images && product.images[0]) || product.image,
         size: selectedSize || undefined
       })
     }
@@ -97,7 +99,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         id: product.id,
         name: product.name,
         price: product.price,
-        image: product.image
+        image: (product.images && product.images[0]) || product.image
       })
     }
   }
@@ -136,11 +138,30 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         <div className="space-y-4">
           <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
             <img
-              src={product.image || "/placeholder.svg"}
+              src={(product.images && product.images[currentImageIndex]) || product.image || "/placeholder.svg"}
               alt={product.name}
               className="w-full h-full object-cover"
             />
           </div>
+          {product.images && product.images.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {product.images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentImageIndex(index)}
+                  className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${
+                    currentImageIndex === index ? 'border-primary' : 'border-transparent'
+                  }`}
+                >
+                  <img
+                    src={image || "/placeholder.svg"}
+                    alt={`${product.name} ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
