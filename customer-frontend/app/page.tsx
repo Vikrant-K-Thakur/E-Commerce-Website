@@ -293,7 +293,11 @@ export default function HomePage() {
           <section className="px-4 py-6 lg:px-8">
             <div className="mb-4">
               <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground mb-2">
-                {selectedCategory?.charAt(0).toUpperCase() + selectedCategory?.slice(1)} Shirts
+                {selectedCategory === 'regular' ? 'Regular T Shirt' : 
+                 selectedCategory === 'oversized' ? 'Oversized Tshirt' :
+                 selectedCategory === 'polo' ? 'Polo T Shirts' :
+                 selectedCategory === 'premium' ? 'Premium Collection' :
+                 selectedCategory?.charAt(0).toUpperCase() + selectedCategory?.slice(1)} Products
               </h2>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
@@ -371,7 +375,11 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No {selectedCategory} shirts found.</p>
+                <p className="text-muted-foreground">No {selectedCategory === 'regular' ? 'regular t shirts' : 
+                 selectedCategory === 'oversized' ? 'oversized tshirts' :
+                 selectedCategory === 'polo' ? 'polo t shirts' :
+                 selectedCategory === 'premium' ? 'premium collection items' :
+                 selectedCategory} found.</p>
               </div>
             )}
           </section>

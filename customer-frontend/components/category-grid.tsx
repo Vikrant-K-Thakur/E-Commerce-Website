@@ -2,9 +2,9 @@ import { Card } from "@/components/ui/card"
 import { Shirt, Bold as Polo, Users, Sparkles } from "lucide-react"
 
 const categories = [
-  { id: "casual", name: "Casual Shirts", icon: Shirt, filter: "casual" },
-  { id: "formal", name: "Formal Shirts", icon: Polo, filter: "formal" },
-  { id: "polo", name: "Polo Shirts", icon: Users, filter: "polo" },
+  { id: "casual", name: "Regular T Shirt", icon: Shirt, filter: "regular" },
+  { id: "formal", name: "Oversized Tshirt", icon: Polo, filter: "oversized" },
+  { id: "polo", name: "Polo T Shirts", icon: Users, filter: "polo" },
   { id: "premium", name: "Premium Collection", icon: Sparkles, filter: "premium" },
 ]
 
