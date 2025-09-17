@@ -45,17 +45,48 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" })
   const [reviews, setReviews] = useState<any[]>([])
 
-  const handleSubmitReview = () => {
-    if (newReview.comment.trim()) {
-      const review = {
-        id: Date.now(),
-        user: "You",
-        rating: newReview.rating,
-        date: new Date().toLocaleDateString(),
-        comment: newReview.comment
+  useEffect(() => {
+    if (product) {
+      fetchReviews()
+    }
+  }, [product])
+
+  const fetchReviews = async () => {
+    try {
+      const response = await fetch(`/api/reviews?productId=${params.id}`)
+      const result = await response.json()
+      if (result.success) {
+        setReviews(result.data)
       }
-      setReviews([review, ...reviews])
-      setNewReview({ rating: 5, comment: "" })
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error)
+    }
+  }
+
+  const handleSubmitReview = async () => {
+    if (newReview.comment.trim() && product) {
+      try {
+        const response = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId: product.id,
+            productName: product.name,
+            rating: newReview.rating,
+            comment: newReview.comment,
+            customerName: 'Customer',
+            customerEmail: 'customer@example.com'
+          })
+        })
+        
+        const result = await response.json()
+        if (result.success) {
+          setReviews([result.data, ...reviews])
+          setNewReview({ rating: 5, comment: "" })
+        }
+      } catch (error) {
+        console.error('Failed to submit review:', error)
+      }
     }
   }
   const { addItem } = useCart()
@@ -310,8 +341,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                         <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
                       ))}
                     </div>
-                    <span className="font-medium">{review.user}</span>
-                    <span className="text-sm text-muted-foreground">{review.date}</span>
+                    <span className="font-medium">{review.customerName}</span>
+                    <span className="text-sm text-muted-foreground">{new Date(review.date).toLocaleDateString()}</span>
                   </div>
                   <p className="text-muted-foreground leading-relaxed">{review.comment}</p>
                 </Card>
@@ -445,19 +476,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                 />
                 <Button 
                   className="w-full h-12 font-semibold"
-                  onClick={() => {
-                    if (newReview.comment.trim()) {
-                      const review = {
-                        id: Date.now(),
-                        user: "You",
-                        rating: newReview.rating,
-                        date: new Date().toLocaleDateString(),
-                        comment: newReview.comment
-                      }
-                      setReviews([review, ...reviews])
-                      setNewReview({ rating: 5, comment: "" })
-                    }
-                  }}
+                  onClick={handleSubmitReview}
                   disabled={!newReview.comment.trim()}
                 >
                   Submit Review
@@ -477,8 +496,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                           <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
                         ))}
                       </div>
-                      <span className="font-semibold">{review.user}</span>
-                      <span className="text-sm text-muted-foreground">{review.date}</span>
+                      <span className="font-semibold">{review.customerName}</span>
+                      <span className="text-sm text-muted-foreground">{new Date(review.date).toLocaleDateString()}</span>
                     </div>
                     <p className="text-muted-foreground leading-relaxed">{review.comment}</p>
                   </Card>

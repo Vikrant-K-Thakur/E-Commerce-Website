@@ -85,3 +85,49 @@ export async function getWishlist(email: string): Promise<any[]> {
     return []
   }
 }
+
+export interface Review {
+  id: string
+  productId: string
+  productName: string
+  rating: number
+  comment: string
+  customerName: string
+  customerEmail?: string
+  isNew: boolean
+  date: string
+}
+
+export async function saveReview(data: {
+  productId: string
+  productName: string
+  rating: number
+  comment: string
+  customerName: string
+  customerEmail?: string
+}): Promise<Review | null> {
+  try {
+    const response = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    const result = await response.json()
+    return result.success ? result.data : null
+  } catch (error) {
+    console.error('Save review failed:', error)
+    return null
+  }
+}
+
+export async function getReviews(productId?: string): Promise<Review[]> {
+  try {
+    const url = productId ? `/api/reviews?productId=${productId}` : '/api/reviews'
+    const response = await fetch(url)
+    const result = await response.json()
+    return result.success ? result.data : []
+  } catch (error) {
+    console.error('Get reviews failed:', error)
+    return []
+  }
+}

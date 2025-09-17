@@ -1,14 +1,16 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Users, Package, LineChart, Shield, LogOut, Shirt, Gift } from "lucide-react"
+import { BarChart3, Users, Package, LineChart, Shield, LogOut, Shirt, Gift, MessageSquare } from "lucide-react"
 import { clearAuthCookie } from "../lib/auth"
 
 const links = [
   { href: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
   { href: "/admin/orders", label: "Orders", icon: Package },
   { href: "/admin/add-product", label: "Add Product", icon: Package },
+  { href: "/admin/product-reviews", label: "Product Reviews", icon: MessageSquare, badge: true },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/redeem-codes", label: "Redeem Codes", icon: Gift },
   { href: "/admin/analytics", label: "Analytics", icon: LineChart },
@@ -16,7 +18,27 @@ const links = [
 ]
 
 export default function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
+  const [newReviewsCount, setNewReviewsCount] = useState(0)
   const pathname = usePathname()
+
+  useEffect(() => {
+    fetchNewReviewsCount()
+    const interval = setInterval(fetchNewReviewsCount, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const fetchNewReviewsCount = async () => {
+    try {
+      const response = await fetch('/api/reviews')
+      const result = await response.json()
+      if (result.success) {
+        const newCount = result.data.filter((review: any) => review.isNew).length
+        setNewReviewsCount(newCount)
+      }
+    } catch (error) {
+      console.error('Failed to fetch reviews count:', error)
+    }
+  }
 
   return (
     <nav className="space-y-1">
@@ -26,18 +48,24 @@ export default function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
         <span>T-Shirts & Shirts only</span>
       </div>
 
-      {links.map(({ href, label, icon: Icon }) => {
+      {links.map(({ href, label, icon: Icon, badge }) => {
         const active = pathname === href
+        const showBadge = badge && label === "Product Reviews" && newReviewsCount > 0
         return (
           <Link
             key={href}
             href={href}
             onClick={onNavigate}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition relative
               ${active ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
           >
             <Icon className="w-4 h-4" />
             {label}
+            {showBadge && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {newReviewsCount > 99 ? '99+' : newReviewsCount}
+              </span>
+            )}
           </Link>
         )
       })}

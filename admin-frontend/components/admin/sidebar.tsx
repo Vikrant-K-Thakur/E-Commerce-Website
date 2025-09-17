@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -15,6 +15,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react"
 
 const navigation = [
@@ -22,6 +23,7 @@ const navigation = [
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Add Product", href: "/admin/add-product", icon: Package },
+  { name: "Product Reviews", href: "/admin/product-reviews", icon: MessageSquare, badge: true },
   { name: "Customers", href: "/admin/customers", icon: Users },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Promotions", href: "/admin/promotions", icon: Megaphone },
@@ -31,7 +33,27 @@ const navigation = [
 
 export function AdminSidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const [newReviewsCount, setNewReviewsCount] = useState(0)
   const pathname = usePathname()
+
+  useEffect(() => {
+    fetchNewReviewsCount()
+    const interval = setInterval(fetchNewReviewsCount, 30000) // Check every 30 seconds
+    return () => clearInterval(interval)
+  }, [])
+
+  const fetchNewReviewsCount = async () => {
+    try {
+      const response = await fetch('/api/reviews')
+      const result = await response.json()
+      if (result.success) {
+        const newCount = result.data.filter((review: any) => review.isNew).length
+        setNewReviewsCount(newCount)
+      }
+    } catch (error) {
+      console.error('Failed to fetch reviews count:', error)
+    }
+  }
 
   return (
     <div
@@ -61,18 +83,24 @@ export function AdminSidebar() {
       <nav className="flex-1 p-4 space-y-2">
         {navigation.map((item) => {
           const isActive = pathname === item.href
+          const showBadge = item.badge && item.name === "Product Reviews" && newReviewsCount > 0
           return (
             <Link
               key={item.name}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative",
                 isActive ? "bg-blue-50 text-blue-700 border border-blue-200" : "text-gray-700 hover:bg-gray-100",
                 collapsed && "justify-center",
               )}
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
               {!collapsed && <span>{item.name}</span>}
+              {showBadge && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {newReviewsCount > 99 ? '99+' : newReviewsCount}
+                </span>
+              )}
             </Link>
           )
         })}
