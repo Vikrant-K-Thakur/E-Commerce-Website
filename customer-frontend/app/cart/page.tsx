@@ -87,17 +87,25 @@ export default function CartPage() {
             lat: position.coords.latitude,
             lon: position.coords.longitude
           }
+
           setUserLocation(location)
           fetchPickupPoints(location)
           setLocationLoading(false)
         },
         (error) => {
           console.error('Location access denied:', error)
+          alert('Location access denied. Showing all pickup points without distance calculation.')
           fetchPickupPoints()
           setLocationLoading(false)
+        },
+        {
+          enableHighAccuracy: false, // Faster, less accurate
+          timeout: 5000, // 5 seconds instead of 10
+          maximumAge: 600000 // 10 minutes cache
         }
       )
     } else {
+      alert('Geolocation is not supported by this browser.')
       fetchPickupPoints()
       setLocationLoading(false)
     }
@@ -108,6 +116,7 @@ export default function CartPage() {
       const params = location ? `?lat=${location.lat}&lon=${location.lon}` : ''
       const response = await fetch(`/api/pickup-points${params}`)
       const data = await response.json()
+      
       if (data.success) {
         setPickupPoints(data.data)
         setCanDeliver(data.canDeliver !== false)
@@ -117,9 +126,13 @@ export default function CartPage() {
         if (data.data.length > 0 && data.canDeliver !== false) {
           setSelectedPickupPoint(data.data[0])
         }
+      } else {
+        console.error('API Error:', data.error)
+        alert('Failed to load pickup points: ' + data.error)
       }
     } catch (error) {
       console.error('Failed to fetch pickup points:', error)
+      alert('Failed to load pickup points. Please try again.')
     }
   }
 
