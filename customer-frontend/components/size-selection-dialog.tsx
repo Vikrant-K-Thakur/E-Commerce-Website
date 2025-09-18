@@ -14,6 +14,7 @@ interface Product {
   image: string
   sizes?: any[]
   coins?: number
+  codAvailable?: boolean
 }
 
 interface SizeSelectionDialogProps {
@@ -46,7 +47,8 @@ export function SizeSelectionDialog({ product, isOpen, onClose }: SizeSelectionD
       price: product.price,
       image: product.image,
       size: selectedSize || undefined,
-      coins: product.coins || 0
+      coins: product.coins || 0,
+      codAvailable: product.codAvailable !== false
     })
 
     setSelectedSize("")

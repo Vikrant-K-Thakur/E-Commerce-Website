@@ -20,11 +20,22 @@ export default function CartPage() {
   const [walletBalance, setWalletBalance] = useState(0)
   const [usedCoinsPerItem, setUsedCoinsPerItem] = useState<{[key: string]: boolean}>({})
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'online' | 'cod'>('online')
 
   useEffect(() => {
     if (user?.email) {
       fetchAvailableCoupons()
       fetchWalletBalance()
+    }
+    // Load Razorpay script
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    document.body.appendChild(script)
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script)
+      }
     }
   }, [user?.email])
 
@@ -75,66 +86,140 @@ export default function CartPage() {
   }, 0)
   const total = Math.max(0, totalPrice - discount - coinsDiscount)
 
-  const placeOrder = async () => {
+  const handleOnlinePayment = async () => {
     if (!user?.email) return
     
-    if (walletBalance < total) {
-      alert(`Insufficient wallet balance. You need ${total - walletBalance} more ₹. Please add funds to your wallet.`)
-      return
-    }
-
     setIsPlacingOrder(true)
     try {
-      const orderData = {
-        email: user.email,
-        items: cartItems.map(item => ({
-          id: item.id,
-          productId: item.productId || item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          size: item.size || 'N/A',
-          image: item.image
-        })),
-        totalAmount: total
-      }
-      
-      if (discount > 0) {
-        orderData.discountAmount = discount
-      }
-      
-      if (coinsDiscount > 0) {
-        orderData.coinsUsed = coinsDiscount
-      }
-      
-      if (appliedCoupon?._id) {
-        orderData.couponId = appliedCoupon._id
+      // Create Razorpay order
+      const orderResponse = await fetch('/api/wallet/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: total * 100, // Razorpay expects amount in paise
+          currency: 'INR'
+        })
+      })
+
+      const orderResult = await orderResponse.json()
+      if (!orderResult.success) {
+        throw new Error(orderResult.error || 'Failed to create order')
       }
 
+      // Razorpay checkout options
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_1234567890',
+        amount: total * 100,
+        currency: 'INR',
+        name: 'Your E-Commerce Store',
+        description: `Order Payment - ${cartItems.length} items`,
+        order_id: orderResult.orderId,
+        handler: async function (response: any) {
+          try {
+            // Verify payment and place order
+            const verifyResponse = await fetch('/api/orders', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: user.email,
+                items: cartItems.map(item => ({
+                  id: item.id,
+                  productId: item.productId || item.id,
+                  name: item.name,
+                  price: item.price,
+                  quantity: item.quantity,
+                  size: item.size || 'N/A',
+                  image: item.image
+                })),
+                totalAmount: total,
+                discountAmount: discount > 0 ? discount : undefined,
+                coinsUsed: coinsDiscount > 0 ? coinsDiscount : undefined,
+                couponId: appliedCoupon?._id,
+                paymentMethod: 'online',
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            })
+
+            const verifyResult = await verifyResponse.json()
+            if (verifyResult.success) {
+              alert(`Order placed successfully! Order ID: ${verifyResult.orderId}`)
+              clearCart()
+              setAppliedCoupon(null)
+              setUsedCoinsPerItem({})
+            } else {
+              throw new Error(verifyResult.error || 'Order placement failed')
+            }
+          } catch (error) {
+            alert('Order placement failed. Please contact support if payment was deducted.')
+          }
+        },
+        prefill: {
+          name: user.name || '',
+          email: user.email,
+          contact: user.phone || ''
+        },
+        theme: { color: '#3B82F6' },
+        modal: {
+          ondismiss: function() {
+            setIsPlacingOrder(false)
+          }
+        }
+      }
+
+      const rzp = new (window as any).Razorpay(options)
+      rzp.open()
+    } catch (error) {
+      alert('Payment failed. Please try again.')
+      setIsPlacingOrder(false)
+    }
+  }
+
+  const handleCODOrder = async () => {
+    if (!user?.email) return
+    
+    // Check if all items support COD
+    const codUnavailableItems = cartItems.filter(item => item.codAvailable === false)
+    if (codUnavailableItems.length > 0) {
+      alert(`Cash on Delivery is not available for: ${codUnavailableItems.map(item => item.name).join(', ')}`)
+      return
+    }
+    
+    setIsPlacingOrder(true)
+    try {
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          items: cartItems.map(item => ({
+            id: item.id,
+            productId: item.productId || item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            size: item.size || 'N/A',
+            image: item.image
+          })),
+          totalAmount: total,
+          discountAmount: discount > 0 ? discount : undefined,
+          coinsUsed: coinsDiscount > 0 ? coinsDiscount : undefined,
+          couponId: appliedCoupon?._id,
+          paymentMethod: 'cod'
+        })
       })
 
       const data = await response.json()
       if (data.success) {
-        alert(`Order placed successfully! Order ID: ${data.orderId}`)
+        alert(`Order placed successfully! Order ID: ${data.orderId}. Pay ₹${total} on delivery.`)
         clearCart()
         setAppliedCoupon(null)
         setUsedCoinsPerItem({})
-        setWalletBalance(data.newBalance)
       } else {
-        if (data.error === 'Insufficient wallet balance') {
-          alert(`Insufficient wallet balance. You need ${data.requiredAmount - data.currentBalance} more ₹. Please add funds to your wallet.`)
-        } else {
-          alert('Failed to place order: ' + data.error)
-        }
+        alert('Failed to place order: ' + data.error)
       }
     } catch (error) {
-      console.error('Failed to place order:', error)
       alert('Failed to place order. Please try again.')
     } finally {
       setIsPlacingOrder(false)
@@ -399,61 +484,72 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                      <Wallet className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-blue-800">Your Wallet Balance</span>
-                      <p className="text-xs text-blue-600">Available for discounts</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-bold text-lg text-blue-700">{walletBalance}</span>
-                    <p className="text-xs text-blue-600">coins</p>
-                  </div>
-                </div>
+              <div className="space-y-4">
+                <div className="text-sm font-medium">Select Payment Method:</div>
                 
-                {walletBalance < total && (
-                  <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-                    <p className="text-sm text-red-700">
-                      Insufficient balance. You need {(total - walletBalance).toFixed(2)} more ₹.
-                    </p>
-                    <Link href="/wallet">
-                      <Button size="sm" className="mt-2">
-                        Add Funds
-                      </Button>
-                    </Link>
+                {/* Payment Method Selection */}
+                <div className="space-y-3">
+                  <div 
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                      selectedPaymentMethod === 'online' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    }`}
+                    onClick={() => setSelectedPaymentMethod('online')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm">💳</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">Online Payment</p>
+                        <p className="text-sm text-gray-600">Pay securely using UPI, Cards, Net Banking</p>
+                      </div>
+                      {selectedPaymentMethod === 'online' && (
+                        <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
 
-              <div className="space-y-3">
-                <div className="text-sm font-medium">Payment Options:</div>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button 
-                    className="bg-blue-600 hover:bg-blue-700 text-white" 
-                    onClick={placeOrder}
-                    disabled={isPlacingOrder || walletBalance < total}
+                  <div 
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                      selectedPaymentMethod === 'cod' ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                    }`}
+                    onClick={() => setSelectedPaymentMethod('cod')}
                   >
-                    <Wallet className="w-4 h-4 mr-2" />
-                    {isPlacingOrder ? 'Processing...' : 'Pay with Wallet'}
-                  </Button>
-                  <Button 
-                    className="bg-green-600 hover:bg-green-700 text-white" 
-                    onClick={() => alert('Online payment coming soon!')}
-                  >
-                    💳 Online Payment
-                  </Button>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm">💵</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">Cash on Delivery</p>
+                        <p className="text-sm text-gray-600">Pay ₹{total.toFixed(2)} when your order arrives</p>
+                      </div>
+                      {selectedPaymentMethod === 'cod' && (
+                        <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Place Order Button */}
                 <Button 
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => alert('Cash on Delivery available for orders above ₹500')}
+                  className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                  onClick={selectedPaymentMethod === 'online' ? handleOnlinePayment : handleCODOrder}
+                  disabled={isPlacingOrder}
                 >
-                  💵 Cash on Delivery
+                  {isPlacingOrder ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      {selectedPaymentMethod === 'online' ? '💳 Pay Online' : '💵 Place COD Order'} - ₹{total.toFixed(2)}
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>

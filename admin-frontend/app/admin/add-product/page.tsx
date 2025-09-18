@@ -33,7 +33,8 @@ export default function AddProductPage() {
     images: [''],
     category: '',
     sizes: '',
-    available: true
+    available: true,
+    codAvailable: true
   })
   const [isLoading, setIsLoading] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -77,13 +78,14 @@ export default function AddProductPage() {
           images: formData.images.filter(img => img.trim()),
           category: formData.category,
           sizes: sizesArray,
-          available: formData.available
+          available: formData.available,
+          codAvailable: formData.codAvailable
         })
       })
 
       const result = await response.json()
       if (result.success) {
-        setFormData({ productId: '', name: '', price: '', coins: '', description: '', images: [''], category: '', sizes: '', available: true })
+        setFormData({ productId: '', name: '', price: '', coins: '', description: '', images: [''], category: '', sizes: '', available: true, codAvailable: true })
         setEditingProduct(null)
         fetchProducts()
         toast({
@@ -148,14 +150,15 @@ export default function AddProductPage() {
       images: product.images || [product.image || ''],
       category: product.category || '',
       sizes: product.sizes?.join(', ') || '',
-      available: product.available !== false
+      available: product.available !== false,
+      codAvailable: product.codAvailable !== false
     })
     setError('')
   }
 
   const handleCancelEdit = () => {
     setEditingProduct(null)
-    setFormData({ productId: '', name: '', price: '', coins: '', description: '', images: [''], category: '', sizes: '', available: true })
+    setFormData({ productId: '', name: '', price: '', coins: '', description: '', images: [''], category: '', sizes: '', available: true, codAvailable: true })
     setError('')
   }
 
@@ -295,7 +298,7 @@ export default function AddProductPage() {
                 </Button>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-600">Sizes (optional)</label>
                 <Input
@@ -326,6 +329,31 @@ export default function AddProductPage() {
                       className="text-red-600"
                     />
                     <span className="text-sm text-red-600">Not Available</span>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Cash on Delivery</label>
+                <div className="flex items-center gap-4 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="codAvailable"
+                      checked={formData.codAvailable === true}
+                      onChange={() => setFormData({...formData, codAvailable: true})}
+                      className="text-green-600"
+                    />
+                    <span className="text-sm text-green-600">Yes</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="codAvailable"
+                      checked={formData.codAvailable === false}
+                      onChange={() => setFormData({...formData, codAvailable: false})}
+                      className="text-red-600"
+                    />
+                    <span className="text-sm text-red-600">No</span>
                   </label>
                 </div>
               </div>
@@ -362,6 +390,7 @@ export default function AddProductPage() {
                   <TableHead className="text-gray-600">Coins</TableHead>
                   <TableHead className="text-gray-600">Category</TableHead>
                   <TableHead className="text-gray-600">Status</TableHead>
+                  <TableHead className="text-gray-600">COD</TableHead>
                   <TableHead className="text-gray-600">Description</TableHead>
                   <TableHead className="text-gray-600">Actions</TableHead>
                 </TableRow>
@@ -398,6 +427,14 @@ export default function AddProductPage() {
                         className={product.available !== false ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
                       >
                         {product.available !== false ? 'Available' : 'Not Available'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={product.codAvailable !== false ? "default" : "destructive"}
+                        className={product.codAvailable !== false ? "bg-blue-100 text-blue-800" : "bg-orange-100 text-orange-800"}
+                      >
+                        {product.codAvailable !== false ? 'Yes' : 'No'}
                       </Badge>
                     </TableCell>
                     <TableCell className="max-w-xs truncate text-gray-600">{product.description}</TableCell>

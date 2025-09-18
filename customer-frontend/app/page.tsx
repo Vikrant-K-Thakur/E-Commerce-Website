@@ -127,7 +127,7 @@ export default function HomePage() {
         price: product.price,
         image: (product.images && product.images[0]) || product.image,
         coins: product.coins || 0,
-        quantity: 1
+        codAvailable: product.codAvailable !== false
       })
     }
   }

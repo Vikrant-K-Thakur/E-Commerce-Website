@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MongoClient } from 'mongodb'
+import crypto from 'crypto'
 
 const client = new MongoClient(process.env.DATABASE_URL!, {
   tls: true,
@@ -49,7 +50,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { action, email, items, totalAmount, discountAmount, coinsUsed, couponId, orderId, refundAmount } = await request.json()
+    const { 
+      action, 
+      email, 
+      items, 
+      totalAmount, 
+      discountAmount, 
+      coinsUsed, 
+      couponId, 
+      orderId, 
+      refundAmount,
+      paymentMethod,
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    } = await request.json()
     
     const db = await connectDB()
     if (!db) {
@@ -123,22 +138,32 @@ export async function POST(request: NextRequest) {
     
     // Original order creation logic
     
-    if (!email || !items || !totalAmount) {
+    if (!email || !items || !totalAmount || !paymentMethod) {
       return NextResponse.json({ success: false, error: 'Missing required fields' })
     }
 
-    // Check wallet balance
+    // For online payments, verify Razorpay signature
+    if (paymentMethod === 'online') {
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return NextResponse.json({ success: false, error: 'Missing payment verification data' })
+      }
+      
+      // Verify signature
+      const secret = process.env.RAZORPAY_KEY_SECRET || 'your_secret_key'
+      const body = razorpay_order_id + "|" + razorpay_payment_id
+      const expectedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(body.toString())
+        .digest('hex')
+
+      if (expectedSignature !== razorpay_signature) {
+        return NextResponse.json({ success: false, error: 'Invalid payment signature' })
+      }
+    }
+
+    // Get customer data
     const customer = await db.collection('customers').findOne({ email })
     const currentBalance = customer?.coinBalance || 0
-
-    if (currentBalance < totalAmount) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Insufficient wallet balance',
-        currentBalance,
-        requiredAmount: totalAmount
-      })
-    }
 
     // Create order
     const newOrderId = 'ORD' + new Date().getTime()
@@ -150,8 +175,11 @@ export async function POST(request: NextRequest) {
       discountAmount: discountAmount || 0,
       coinsUsed: coinsUsed || 0,
       totalAmount,
-      paymentMethod: 'wallet',
+      paymentMethod,
+      paymentStatus: paymentMethod === 'online' ? 'paid' : 'pending',
       status: 'confirmed',
+      razorpay_order_id: razorpay_order_id || null,
+      razorpay_payment_id: razorpay_payment_id || null,
       created_at: new Date(),
       date: new Date().toISOString().split('T')[0],
       time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
@@ -160,36 +188,55 @@ export async function POST(request: NextRequest) {
     // Insert order
     await db.collection('orders').insertOne(order)
 
-    // Deduct payment amount from wallet and coins used for discount
-    await db.collection('customers').updateOne(
-      { email },
-      { 
-        $inc: { coinBalance: -(totalAmount + (coinsUsed || 0)) },
-        $set: { updated_at: new Date() }
+    // Handle coins discount (deduct coins used for discount from wallet)
+    if (coinsUsed > 0) {
+      await db.collection('customers').updateOne(
+        { email },
+        { 
+          $inc: { coinBalance: -coinsUsed },
+          $set: { updated_at: new Date() }
+        }
+      )
+      
+      // Create transaction record for coins usage
+      const coinsTransaction = {
+        id: new Date().getTime().toString() + '_coins',
+        email,
+        type: 'debit',
+        description: `Coins Discount Applied - ${newOrderId}`,
+        amount: coinsUsed,
+        coins: -coinsUsed,
+        paymentMethod: 'coins',
+        status: 'completed',
+        orderId: newOrderId,
+        created_at: new Date(),
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
       }
-    )
-
-    // Create transaction record
-    const transactionDescription = coinsUsed > 0 
-      ? `Order Payment - ${newOrderId} (Used ${coinsUsed} coins for discount)`
-      : `Order Payment - ${newOrderId}`
-    
-    const transaction = {
-      id: new Date().getTime().toString(),
-      email,
-      type: 'debit',
-      description: transactionDescription,
-      amount: totalAmount,
-      coins: -(totalAmount + (coinsUsed || 0)),
-      paymentMethod: 'wallet',
-      status: 'completed',
-      orderId: newOrderId,
-      created_at: new Date(),
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      
+      await db.collection('transactions').insertOne(coinsTransaction)
     }
 
-    await db.collection('transactions').insertOne(transaction)
+    // Create payment transaction record
+    if (paymentMethod === 'online') {
+      const transaction = {
+        id: new Date().getTime().toString(),
+        email,
+        type: 'payment',
+        description: `Online Payment - ${newOrderId}`,
+        amount: totalAmount,
+        paymentMethod: 'razorpay',
+        status: 'completed',
+        orderId: newOrderId,
+        razorpay_order_id,
+        razorpay_payment_id,
+        created_at: new Date(),
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      }
+      
+      await db.collection('transactions').insertOne(transaction)
+    }
 
     // Mark coupon as used if applied
     if (couponId) {
@@ -208,8 +255,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       message: 'Order placed successfully',
-      orderId: newOrderId,
-      newBalance: currentBalance - (totalAmount + (coinsUsed || 0))
+      orderId: newOrderId
     })
   } catch (error) {
     console.error('API Error:', error)

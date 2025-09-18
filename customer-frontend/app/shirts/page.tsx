@@ -78,7 +78,8 @@ export default function ViewAllProductsPage() {
         name: product.name,
         price: product.price,
         image: product.image,
-        coins: product.coins || 0
+        coins: product.coins || 0,
+        codAvailable: product.codAvailable !== false
       })
     }
   }

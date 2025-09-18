@@ -13,6 +13,7 @@ interface CartItem {
   size?: string
   productId?: string
   coins?: number
+  codAvailable?: boolean
 }
 
 interface CartContextType {

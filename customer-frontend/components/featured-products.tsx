@@ -22,6 +22,7 @@ interface Product {
   sizes?: any[]
   coins?: number
   available?: boolean
+  codAvailable?: boolean
 }
 
 export function FeaturedProducts() {
@@ -60,7 +61,8 @@ export function FeaturedProducts() {
         name: product.name,
         price: product.price,
         image: (product.images && product.images[0]) || product.image,
-        coins: product.coins || 0
+        coins: product.coins || 0,
+        codAvailable: product.codAvailable !== false
       })
     }
   }

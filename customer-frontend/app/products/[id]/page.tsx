@@ -124,7 +124,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         price: product.price,
         image: (product.images && product.images[0]) || product.image,
         size: selectedSize || undefined,
-        coins: product.coins || 0
+        coins: product.coins || 0,
+        codAvailable: product.codAvailable !== false
       })
     }
   }

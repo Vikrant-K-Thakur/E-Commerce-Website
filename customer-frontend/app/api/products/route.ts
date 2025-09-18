@@ -33,6 +33,7 @@ export async function GET() {
       sizes: p.sizes || [],
       coins: p.coins || 0,
       available: p.available !== false,
+      codAvailable: p.codAvailable !== false,
       _id: undefined,
     }))
 
