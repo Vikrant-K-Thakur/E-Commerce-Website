@@ -63,7 +63,8 @@ export async function GET(request: NextRequest) {
           trackingId: order.trackingId || null,
           items: order.items || [],
           address: order.address || customerDetails?.address || '',
-          deliveryAddress: order.deliveryAddress || null
+          deliveryAddress: order.deliveryAddress || null,
+          pickupPoint: order.pickupPoint || null
         }
       })
     )

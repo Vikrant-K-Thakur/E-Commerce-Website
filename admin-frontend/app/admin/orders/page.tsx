@@ -48,6 +48,7 @@ interface Order {
   items: any[]
   address: string
   deliveryAddress: any
+  pickupPoint: any
 }
 
 // Analytics Dialog Component
@@ -732,6 +733,41 @@ export default function OrderManagement() {
                                             <div>
                                               <Label className="text-sm font-medium text-gray-600">Default Address</Label>
                                               <p className="text-green-600 font-medium">Yes</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Pickup Point Section */}
+                                    {selectedOrder.pickupPoint && (
+                                      <div>
+                                        <h3 className="text-lg font-semibold mb-3 text-purple-600">Pickup Point</h3>
+                                        <div className="grid grid-cols-2 gap-4 p-4 bg-purple-50 rounded-lg">
+                                          <div className="col-span-2">
+                                            <Label className="text-sm font-medium text-gray-600">Pickup Location</Label>
+                                            <p className="font-medium text-gray-900">{selectedOrder.pickupPoint.name}</p>
+                                          </div>
+                                          <div className="col-span-2">
+                                            <Label className="text-sm font-medium text-gray-600">Address</Label>
+                                            <p className="text-gray-900">{selectedOrder.pickupPoint.address}</p>
+                                          </div>
+                                          {selectedOrder.pickupPoint.contactPhone && (
+                                            <div>
+                                              <Label className="text-sm font-medium text-gray-600">Contact</Label>
+                                              <p className="text-gray-900">{selectedOrder.pickupPoint.contactPhone}</p>
+                                            </div>
+                                          )}
+                                          {selectedOrder.pickupPoint.timings && (
+                                            <div>
+                                              <Label className="text-sm font-medium text-gray-600">Timings</Label>
+                                              <p className="text-gray-900">{selectedOrder.pickupPoint.timings}</p>
+                                            </div>
+                                          )}
+                                          {selectedOrder.pickupPoint.distance !== undefined && (
+                                            <div>
+                                              <Label className="text-sm font-medium text-gray-600">Distance from Customer</Label>
+                                              <p className="text-gray-900">{selectedOrder.pickupPoint.distance}km</p>
                                             </div>
                                           )}
                                         </div>

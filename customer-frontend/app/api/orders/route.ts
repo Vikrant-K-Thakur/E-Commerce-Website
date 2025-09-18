@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
       refundAmount,
       paymentMethod,
       deliveryAddress,
+      pickupPoint,
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature
@@ -191,6 +192,7 @@ export async function POST(request: NextRequest) {
       paymentStatus: paymentMethod === 'online' ? 'paid' : 'pending',
       status: 'confirmed',
       deliveryAddress: deliveryAddress || null,
+      pickupPoint: pickupPoint || null,
       razorpay_order_id: razorpay_order_id || null,
       razorpay_payment_id: razorpay_payment_id || null,
       isViewedByAdmin: false,
