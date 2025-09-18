@@ -111,42 +111,36 @@ export async function POST(request: NextRequest) {
         { orderId: data.orderId },
         { $set: { status: 'cancelled', updated_at: new Date() } }
       )
+      
+      // IMPORTANT: Coupon remains used even after cancellation to prevent reuse
+      // This is intentional behavior - once a coupon is used, it cannot be used again
+      // even if the order is cancelled to prevent abuse
 
-      // Refund amount to customer wallet only if payment method is not COD
-      if (order.paymentMethod !== 'cod') {
-        await db.collection('customers').updateOne(
-          { email: order.customerEmail },
-          { 
-            $inc: { coinBalance: order.totalAmount },
-            $set: { updated_at: new Date() }
-          }
-        )
-      }
+      // Note: Refund will be processed separately, no immediate wallet credit
 
-      // Create refund transaction record only if payment method is not COD
+      // Create refund processing record only if payment method is not COD
       if (order.paymentMethod !== 'cod') {
-        const transaction = {
+        const refundRecord = {
           id: new Date().getTime().toString(),
           email: order.customerEmail,
-          type: 'credit',
-          description: `Admin Order Cancellation Refund - ${data.orderId}`,
+          type: 'refund_pending',
+          description: `Refund Processing - Order ${data.orderId}`,
           amount: order.totalAmount,
-          coins: order.totalAmount,
-          paymentMethod: 'wallet',
-          status: 'completed',
+          paymentMethod: order.paymentMethod,
+          status: 'processing',
           orderId: data.orderId,
           created_at: new Date(),
           date: new Date().toISOString().split('T')[0],
           time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
         }
 
-        await db.collection('transactions').insertOne(transaction)
+        await db.collection('refund_requests').insertOne(refundRecord)
       }
 
       // Create notification for customer
       const refundMessage = order.paymentMethod === 'cod' 
         ? `Your order ${data.orderId} has been cancelled by admin.`
-        : `Your order ${data.orderId} has been cancelled by admin and ${order.totalAmount} ₹ have been refunded to your wallet.`
+        : `Your order ${data.orderId} has been cancelled by admin. Refund of ₹${order.totalAmount} will be processed within 1-2 business days.`
       
       const notification = {
         customerEmail: order.customerEmail,

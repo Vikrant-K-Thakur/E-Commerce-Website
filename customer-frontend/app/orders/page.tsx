@@ -71,7 +71,12 @@ export default function OrdersPage() {
   }
 
   const cancelOrder = async (orderId: string, totalAmount: number) => {
-    if (!confirm('Are you sure you want to cancel this order? The amount will be refunded to your wallet.')) {
+    const confirmMessage = `Are you sure you want to cancel this order?\n\n` +
+      `• The amount (₹${totalAmount}) will be refunded\n` +
+      `• Any discount coupons used will remain consumed and cannot be reused\n\n` +
+      `Do you want to proceed with cancellation?`
+    
+    if (!confirm(confirmMessage)) {
       return
     }
 
@@ -89,7 +94,7 @@ export default function OrdersPage() {
 
       const result = await response.json()
       if (result.success) {
-        alert('Order cancelled successfully! Amount refunded to your wallet.')
+        alert('Order cancelled successfully!\n\n• Amount refunded to your wallet\n• Any discount coupons used remain consumed')
         fetchOrders()
         window.dispatchEvent(new Event('notificationUpdate'))
         window.dispatchEvent(new Event('walletUpdate'))

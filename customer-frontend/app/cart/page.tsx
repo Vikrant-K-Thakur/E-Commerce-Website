@@ -56,8 +56,9 @@ export default function CartPage() {
       if (data.success) {
         const validCoupons = data.data.filter((reward: any) => 
           reward.type === 'discount' && 
-          !reward.isUsed && 
-          new Date(reward.expiresAt) > new Date()
+          !reward.isUsed && // Never show used coupons, even from cancelled orders
+          new Date(reward.expiresAt) > new Date() &&
+          (!appliedCoupon || reward._id !== appliedCoupon._id) // Exclude currently applied coupon
         )
         setAvailableCoupons(validCoupons)
       }
@@ -139,11 +140,23 @@ export default function CartPage() {
 
 
   const applyCoupon = (coupon: any) => {
-    setAppliedCoupon(coupon)
+    const confirmed = confirm(
+      `Apply ${coupon.value}% discount coupon?\n\n` +
+      `Important: Once you place an order with this coupon, it will be permanently used and cannot be reused, even if you cancel the order later.\n\n` +
+      `Do you want to continue?`
+    )
+    
+    if (confirmed) {
+      setAppliedCoupon(coupon)
+      // Refresh available coupons to remove the applied one
+      fetchAvailableCoupons()
+    }
   }
 
   const removeCoupon = () => {
     setAppliedCoupon(null)
+    // Refresh available coupons to show the removed one again
+    fetchAvailableCoupons()
   }
 
   const discount = appliedCoupon ? (totalPrice * appliedCoupon.value / 100) : 0
@@ -225,7 +238,9 @@ export default function CartPage() {
 
             const verifyResult = await verifyResponse.json()
             if (verifyResult.success) {
-              alert(`Order placed successfully! Order ID: ${verifyResult.orderId}`)
+              const successMessage = `Order placed successfully! Order ID: ${verifyResult.orderId}` +
+                (appliedCoupon ? `\n\nNote: Your ${appliedCoupon.value}% discount coupon has been used and cannot be reused.` : '')
+              alert(successMessage)
               clearCart()
               setAppliedCoupon(null)
               setUsedCoinsPerItem({})
@@ -304,7 +319,9 @@ export default function CartPage() {
 
       const data = await response.json()
       if (data.success) {
-        alert(`Order placed successfully! Order ID: ${data.orderId}. Pay ₹${total} on delivery.`)
+        const successMessage = `Order placed successfully! Order ID: ${data.orderId}. Pay ₹${total} on delivery.` +
+          (appliedCoupon ? `\n\nNote: Your ${appliedCoupon.value}% discount coupon has been used and cannot be reused.` : '')
+        alert(successMessage)
         clearCart()
         setAppliedCoupon(null)
         setUsedCoinsPerItem({})
@@ -496,16 +513,23 @@ export default function CartPage() {
               </div>
 
               {appliedCoupon ? (
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      {appliedCoupon.value}% OFF
-                    </Badge>
-                    <span className="text-sm text-green-700">{appliedCoupon.description}</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        {appliedCoupon.value}% OFF
+                      </Badge>
+                      <span className="text-sm text-green-700">{appliedCoupon.description}</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={removeCoupon} className="text-green-700">
+                      Remove
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={removeCoupon} className="text-green-700">
-                    Remove
-                  </Button>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <p className="text-xs text-amber-700">
+                      ⚠️ <strong>Important:</strong> Once you place this order, this coupon will be permanently used and cannot be reused, even if the order is cancelled later.
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">

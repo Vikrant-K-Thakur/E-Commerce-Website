@@ -93,45 +93,39 @@ export async function POST(request: NextRequest) {
         { orderId, customerEmail: email },
         { $set: { status: 'cancelled', updated_at: new Date() } }
       )
+      
+      // IMPORTANT: Coupon remains used even after cancellation to prevent reuse
+      // This is intentional behavior - once a coupon is used, it cannot be used again
+      // even if the order is cancelled to prevent abuse
 
       // Get order details to check payment method
       const orderDetails = await db.collection('orders').findOne({ orderId, customerEmail: email })
       
-      // Refund amount to customer wallet only if payment method is not COD
-      if (orderDetails?.paymentMethod !== 'cod') {
-        await db.collection('customers').updateOne(
-          { email },
-          { 
-            $inc: { coinBalance: refundAmount },
-            $set: { updated_at: new Date() }
-          }
-        )
-      }
+      // Note: Refund will be processed separately, no immediate wallet credit
 
-      // Create refund transaction record only if payment method is not COD
+      // Create refund processing record only if payment method is not COD
       if (orderDetails?.paymentMethod !== 'cod') {
-        const transaction = {
+        const refundRecord = {
           id: new Date().getTime().toString(),
           email,
-          type: 'credit',
-          description: `Order Cancellation Refund - ${orderId}`,
+          type: 'refund_pending',
+          description: `Refund Processing - Order ${orderId}`,
           amount: refundAmount,
-          coins: refundAmount,
-          paymentMethod: 'wallet',
-          status: 'completed',
+          paymentMethod: orderDetails.paymentMethod,
+          status: 'processing',
           orderId,
           created_at: new Date(),
           date: new Date().toISOString().split('T')[0],
           time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
         }
 
-        await db.collection('transactions').insertOne(transaction)
+        await db.collection('refund_requests').insertOne(refundRecord)
       }
 
       // Create notification for customer
       const refundMessage = orderDetails?.paymentMethod === 'cod'
         ? `Your order ${orderId} has been cancelled.`
-        : `Your order ${orderId} has been cancelled and ${refundAmount} ₹ have been refunded to your wallet.`
+        : `Your order ${orderId} has been cancelled. Refund of ₹${refundAmount} will be processed within 1-2 business days.`
       
       const notification = {
         customerEmail: email,
@@ -254,7 +248,7 @@ export async function POST(request: NextRequest) {
       await db.collection('transactions').insertOne(transaction)
     }
 
-    // Mark coupon as used if applied
+    // Mark coupon as used if applied (PERMANENT - never restored even on cancellation)
     if (couponId) {
       await db.collection('rewards').updateOne(
         { _id: couponId, customerEmail: email },
@@ -262,6 +256,7 @@ export async function POST(request: NextRequest) {
           $set: { 
             isUsed: true,
             usedAt: new Date(),
+            usedOrderId: newOrderId,
             updated_at: new Date()
           }
         }

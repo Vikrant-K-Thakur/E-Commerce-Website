@@ -396,7 +396,12 @@ export default function OrderManagement() {
   }
 
   const cancelOrderAdmin = async (orderId: string) => {
-    if (!confirm('Are you sure you want to cancel this order? The amount will be refunded to the customer.')) {
+    const confirmMessage = `Are you sure you want to cancel this order?\n\n` +
+      `• The amount will be refunded to the customer\n` +
+      `• Any discount coupons used will remain consumed (cannot be reused)\n\n` +
+      `Do you want to proceed with cancellation?`
+    
+    if (!confirm(confirmMessage)) {
       return
     }
 
@@ -412,7 +417,7 @@ export default function OrderManagement() {
 
       const result = await response.json()
       if (result.success) {
-        alert('Order cancelled successfully! Amount refunded to customer.')
+        alert('Order cancelled successfully!\n\n• Amount refunded to customer\n• Any discount coupons used remain consumed')
         fetchOrders()
       } else {
         alert('Failed to cancel order: ' + result.error)
