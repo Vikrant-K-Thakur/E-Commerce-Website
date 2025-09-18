@@ -179,9 +179,11 @@ export function DesktopSidebar() {
                   <span className="text-sm font-semibold text-foreground">Special Offer</span>
                 </div>
                 <p className="text-xs text-muted-foreground">Get 20% off on premium shirts this week!</p>
-                <Button size="sm" className="w-full">
-                  Shop Now
-                </Button>
+                <Link href="/?category=premium">
+                  <Button size="sm" className="w-full">
+                    Shop Now
+                  </Button>
+                </Link>
               </div>
             </Card>
           </div>

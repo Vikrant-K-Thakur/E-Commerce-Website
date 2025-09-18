@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -18,6 +19,7 @@ import { getProducts } from "@/lib/products"
 import { useCart } from "@/contexts/cart-context"
 
 export default function HomePage() {
+  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState("")
   const [products, setProducts] = useState<any[]>([])
   const [filteredProducts, setFilteredProducts] = useState<any[]>([])
@@ -31,7 +33,13 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchProducts()
-  }, [])
+    
+    // Check for category parameter in URL
+    const categoryParam = searchParams.get('category')
+    if (categoryParam) {
+      setSelectedCategory(categoryParam)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (searchQuery.trim()) {
