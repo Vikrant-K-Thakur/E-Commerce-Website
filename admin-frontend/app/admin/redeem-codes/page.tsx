@@ -297,7 +297,7 @@ export default function RedeemCodesPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="discount">Discount (%)</SelectItem>
-                        <SelectItem value="coins">Gift ₹</SelectItem>
+                        <SelectItem value="coins">Gift Coins</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -308,7 +308,7 @@ export default function RedeemCodesPage() {
                       type="number"
                       value={codeValue}
                       onChange={(e) => setCodeValue(e.target.value)}
-                      placeholder={codeType === 'discount' ? 'Enter percentage' : 'Enter amount(₹) '}
+                      placeholder={codeType === 'discount' ? 'Enter percentage' : 'Enter coins amount'}
                     />
                   </div>
                   
@@ -446,7 +446,7 @@ export default function RedeemCodesPage() {
                           <div className="flex justify-between">
                             <span>Value:</span>
                             <span className="font-medium">
-                              {code.type === 'discount' ? `${code.value}% OFF` : `${code.value} ₹`}
+                              {code.type === 'discount' ? `${code.value}% OFF` : `${code.value} coins`}
                             </span>
                           </div>
                           <div className="flex justify-between">

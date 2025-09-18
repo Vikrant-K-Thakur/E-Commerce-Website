@@ -47,6 +47,7 @@ interface Order {
   trackingId: string | null
   items: any[]
   address: string
+  deliveryAddress: any
 }
 
 // Analytics Dialog Component
@@ -582,7 +583,7 @@ export default function OrderManagement() {
           </div>
 
           {/* Orders Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-96 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
@@ -688,7 +689,7 @@ export default function OrderManagement() {
                                           <p className="font-medium text-green-600">{selectedOrder.customerCoinBalance.toFixed(2)} ₹</p>
                                         </div>
                                         <div className="col-span-2">
-                                          <Label className="text-sm font-medium text-gray-600">Address</Label>
+                                          <Label className="text-sm font-medium text-gray-600">Profile Address</Label>
                                           <p className="text-gray-900">{selectedOrder.customerAddress || 'No address provided'}</p>
                                         </div>
                                         <div>
@@ -697,6 +698,45 @@ export default function OrderManagement() {
                                         </div>
                                       </div>
                                     </div>
+
+                                    {/* Delivery Address Section */}
+                                    {selectedOrder.deliveryAddress && (
+                                      <div>
+                                        <h3 className="text-lg font-semibold mb-3 text-orange-600">Delivery Address</h3>
+                                        <div className="grid grid-cols-2 gap-4 p-4 bg-orange-50 rounded-lg">
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-600">Name</Label>
+                                            <p className="font-medium text-gray-900">{selectedOrder.deliveryAddress.name}</p>
+                                          </div>
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-600">Phone</Label>
+                                            <p className="text-gray-900">{selectedOrder.deliveryAddress.phone}</p>
+                                          </div>
+                                          <div className="col-span-2">
+                                            <Label className="text-sm font-medium text-gray-600">Address</Label>
+                                            <p className="text-gray-900">{selectedOrder.deliveryAddress.address}</p>
+                                          </div>
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-600">City</Label>
+                                            <p className="text-gray-900">{selectedOrder.deliveryAddress.city}</p>
+                                          </div>
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-600">Pincode</Label>
+                                            <p className="text-gray-900">{selectedOrder.deliveryAddress.pincode}</p>
+                                          </div>
+                                          <div>
+                                            <Label className="text-sm font-medium text-gray-600">Address Type</Label>
+                                            <p className="text-gray-900 capitalize">{selectedOrder.deliveryAddress.type || 'home'}</p>
+                                          </div>
+                                          {selectedOrder.deliveryAddress.isDefault && (
+                                            <div>
+                                              <Label className="text-sm font-medium text-gray-600">Default Address</Label>
+                                              <p className="text-green-600 font-medium">Yes</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
 
                                     {/* Order Details Section */}
                                     <div>
@@ -950,9 +990,9 @@ export default function OrderManagement() {
             </CardTitle>
             <CardDescription>Latest Activity</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="max-h-64 overflow-y-auto">
             <div className="space-y-4">
-              {orders.slice(0, 3).map((order) => (
+              {orders.slice(0, 10).map((order) => (
                 <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium text-gray-900">{order.id}</p>

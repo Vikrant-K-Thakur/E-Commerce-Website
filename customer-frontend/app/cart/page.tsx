@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCart } from "@/contexts/cart-context"
 import { useAuth } from "@/contexts/auth-context"
 import { BottomNavigation } from "@/components/bottom-navigation"
@@ -21,11 +23,23 @@ export default function CartPage() {
   const [usedCoinsPerItem, setUsedCoinsPerItem] = useState<{[key: string]: boolean}>({})
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'online' | 'cod'>('online')
+  const [selectedAddress, setSelectedAddress] = useState<any>(null)
+  const [showAddressDialog, setShowAddressDialog] = useState(false)
+  const [addresses, setAddresses] = useState<any[]>([])
+  const [newAddress, setNewAddress] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    city: '',
+    pincode: '',
+    type: 'home'
+  })
 
   useEffect(() => {
     if (user?.email) {
       fetchAvailableCoupons()
       fetchWalletBalance()
+      fetchAddresses()
     }
     // Load Razorpay script
     const script = document.createElement('script')
@@ -68,6 +82,52 @@ export default function CartPage() {
     }
   }
 
+  const fetchAddresses = async () => {
+    try {
+      const response = await fetch(`/api/addresses?email=${user?.email}`)
+      const data = await response.json()
+      if (data.success) {
+        setAddresses(data.data)
+        const defaultAddr = data.data.find((addr: any) => addr.isDefault)
+        if (defaultAddr) {
+          setSelectedAddress(defaultAddr)
+        } else if (data.data.length > 0) {
+          setSelectedAddress(data.data[0])
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch addresses:', error)
+    }
+  }
+
+  const handleAddAddress = async () => {
+    if (!newAddress.name || !newAddress.phone || !newAddress.address || !newAddress.city || !newAddress.pincode) {
+      alert('Please fill all address fields')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user?.email,
+          ...newAddress,
+          isDefault: addresses.length === 0
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        fetchAddresses()
+        setNewAddress({ name: '', phone: '', address: '', city: '', pincode: '', type: 'home' })
+        setShowAddressDialog(false)
+      }
+    } catch (error) {
+      console.error('Failed to add address:', error)
+    }
+  }
+
   const applyCoupon = (coupon: any) => {
     setAppliedCoupon(coupon)
   }
@@ -88,6 +148,11 @@ export default function CartPage() {
 
   const handleOnlinePayment = async () => {
     if (!user?.email) return
+    
+    if (!selectedAddress) {
+      alert('Please select a delivery address')
+      return
+    }
     
     setIsPlacingOrder(true)
     try {
@@ -136,6 +201,7 @@ export default function CartPage() {
                 coinsUsed: coinsDiscount > 0 ? coinsDiscount : undefined,
                 couponId: appliedCoupon?._id,
                 paymentMethod: 'online',
+                deliveryAddress: selectedAddress,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature
@@ -179,6 +245,11 @@ export default function CartPage() {
   const handleCODOrder = async () => {
     if (!user?.email) return
     
+    if (!selectedAddress) {
+      alert('Please select a delivery address')
+      return
+    }
+    
     // Check if all items support COD
     const codUnavailableItems = cartItems.filter(item => item.codAvailable === false)
     if (codUnavailableItems.length > 0) {
@@ -206,7 +277,8 @@ export default function CartPage() {
           discountAmount: discount > 0 ? discount : undefined,
           coinsUsed: coinsDiscount > 0 ? coinsDiscount : undefined,
           couponId: appliedCoupon?._id,
-          paymentMethod: 'cod'
+          paymentMethod: 'cod',
+          deliveryAddress: selectedAddress
         })
       })
 
@@ -440,6 +512,62 @@ export default function CartPage() {
 
 
 
+        {/* Delivery Address */}
+        {cartItems.length > 0 && (
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Delivery Address</h3>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowAddressDialog(true)}
+                >
+                  + Add New
+                </Button>
+              </div>
+
+              {addresses.length > 0 ? (
+                <div className="space-y-3">
+                  {addresses.map((address) => (
+                    <div 
+                      key={address.id}
+                      className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                        selectedAddress?.id === address.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                      }`}
+                      onClick={() => setSelectedAddress(address)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium">{address.name}</span>
+                            {address.isDefault && (
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Default</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">{address.address}</p>
+                          <p className="text-sm text-gray-600">{address.city} - {address.pincode}</p>
+                          <p className="text-sm text-gray-600">Phone: {address.phone}</p>
+                        </div>
+                        {selectedAddress?.id === address.id && (
+                          <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-gray-500 mb-2">No addresses found</p>
+                  <Button onClick={() => setShowAddressDialog(true)}>Add Address</Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Order Summary */}
         {cartItems.length > 0 && (
           <Card>
@@ -558,6 +686,80 @@ export default function CartPage() {
       </div>
 
       <BottomNavigation />
+      
+      {/* Add Address Dialog */}
+      <Dialog open={showAddressDialog} onOpenChange={setShowAddressDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Address</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Full Name</label>
+              <Input
+                value={newAddress.name}
+                onChange={(e) => setNewAddress({...newAddress, name: e.target.value})}
+                placeholder="Enter full name"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Phone Number</label>
+              <Input
+                value={newAddress.phone}
+                onChange={(e) => setNewAddress({...newAddress, phone: e.target.value})}
+                placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Address</label>
+              <Input
+                value={newAddress.address}
+                onChange={(e) => setNewAddress({...newAddress, address: e.target.value})}
+                placeholder="House no, Building, Street"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">City</label>
+                <Input
+                  value={newAddress.city}
+                  onChange={(e) => setNewAddress({...newAddress, city: e.target.value})}
+                  placeholder="City"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Pincode</label>
+                <Input
+                  value={newAddress.pincode}
+                  onChange={(e) => setNewAddress({...newAddress, pincode: e.target.value})}
+                  placeholder="Pincode"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Address Type</label>
+              <Select value={newAddress.type} onValueChange={(value) => setNewAddress({...newAddress, type: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="home">Home</SelectItem>
+                  <SelectItem value="work">Work</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowAddressDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={handleAddAddress} className="flex-1">
+                Add Address
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

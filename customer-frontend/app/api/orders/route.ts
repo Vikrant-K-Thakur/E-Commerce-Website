@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
       orderId, 
       refundAmount,
       paymentMethod,
+      deliveryAddress,
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature
@@ -92,38 +93,49 @@ export async function POST(request: NextRequest) {
         { $set: { status: 'cancelled', updated_at: new Date() } }
       )
 
-      // Refund amount to customer wallet
-      await db.collection('customers').updateOne(
-        { email },
-        { 
-          $inc: { coinBalance: refundAmount },
-          $set: { updated_at: new Date() }
-        }
-      )
-
-      // Create refund transaction record
-      const transaction = {
-        id: new Date().getTime().toString(),
-        email,
-        type: 'credit',
-        description: `Order Cancellation Refund - ${orderId}`,
-        amount: refundAmount,
-        coins: refundAmount,
-        paymentMethod: 'wallet',
-        status: 'completed',
-        orderId,
-        created_at: new Date(),
-        date: new Date().toISOString().split('T')[0],
-        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      // Get order details to check payment method
+      const orderDetails = await db.collection('orders').findOne({ orderId, customerEmail: email })
+      
+      // Refund amount to customer wallet only if payment method is not COD
+      if (orderDetails?.paymentMethod !== 'cod') {
+        await db.collection('customers').updateOne(
+          { email },
+          { 
+            $inc: { coinBalance: refundAmount },
+            $set: { updated_at: new Date() }
+          }
+        )
       }
 
-      await db.collection('transactions').insertOne(transaction)
+      // Create refund transaction record only if payment method is not COD
+      if (orderDetails?.paymentMethod !== 'cod') {
+        const transaction = {
+          id: new Date().getTime().toString(),
+          email,
+          type: 'credit',
+          description: `Order Cancellation Refund - ${orderId}`,
+          amount: refundAmount,
+          coins: refundAmount,
+          paymentMethod: 'wallet',
+          status: 'completed',
+          orderId,
+          created_at: new Date(),
+          date: new Date().toISOString().split('T')[0],
+          time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+        }
+
+        await db.collection('transactions').insertOne(transaction)
+      }
 
       // Create notification for customer
+      const refundMessage = orderDetails?.paymentMethod === 'cod'
+        ? `Your order ${orderId} has been cancelled.`
+        : `Your order ${orderId} has been cancelled and ${refundAmount} ₹ have been refunded to your wallet.`
+      
       const notification = {
         customerEmail: email,
         title: 'Order Cancelled',
-        message: `Your order ${orderId} has been cancelled and ${refundAmount} ₹ have been refunded to your wallet.`,
+        message: refundMessage,
         type: 'order',
         orderId,
         read: false,
@@ -178,8 +190,10 @@ export async function POST(request: NextRequest) {
       paymentMethod,
       paymentStatus: paymentMethod === 'online' ? 'paid' : 'pending',
       status: 'confirmed',
+      deliveryAddress: deliveryAddress || null,
       razorpay_order_id: razorpay_order_id || null,
       razorpay_payment_id: razorpay_payment_id || null,
+      isViewedByAdmin: false,
       created_at: new Date(),
       date: new Date().toISOString().split('T')[0],
       time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })

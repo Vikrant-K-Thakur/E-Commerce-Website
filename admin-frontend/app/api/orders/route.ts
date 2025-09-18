@@ -21,9 +21,18 @@ async function connectDB() {
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const action = searchParams.get('action')
+    
     const db = await connectDB()
     if (!db) {
       return NextResponse.json({ success: false, error: 'Database connection failed' })
+    }
+
+    // Handle new orders count request
+    if (action === 'getNewCount') {
+      const newOrdersCount = await db.collection('orders').countDocuments({ isViewedByAdmin: { $ne: true } })
+      return NextResponse.json({ success: true, count: newOrdersCount })
     }
 
     const orders = await db.collection('orders').find({}).sort({ created_at: -1 }).toArray()
@@ -53,7 +62,8 @@ export async function GET(request: NextRequest) {
           status: order.status || 'confirmed',
           trackingId: order.trackingId || null,
           items: order.items || [],
-          address: order.address || customerDetails?.address || ''
+          address: order.address || customerDetails?.address || '',
+          deliveryAddress: order.deliveryAddress || null
         }
       })
     )
@@ -74,6 +84,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database connection failed' })
     }
 
+    if (action === 'markAsViewed') {
+      // Mark all orders as viewed by admin
+      await db.collection('orders').updateMany(
+        { isViewedByAdmin: { $ne: true } },
+        { $set: { isViewedByAdmin: true, viewedAt: new Date() } }
+      )
+      return NextResponse.json({ success: true })
+    }
+
     if (action === 'cancelOrder') {
       // Get order details
       const order = await db.collection('orders').findOne({ orderId: data.orderId })
@@ -92,38 +111,46 @@ export async function POST(request: NextRequest) {
         { $set: { status: 'cancelled', updated_at: new Date() } }
       )
 
-      // Refund amount to customer wallet
-      await db.collection('customers').updateOne(
-        { email: order.customerEmail },
-        { 
-          $inc: { coinBalance: order.totalAmount },
-          $set: { updated_at: new Date() }
-        }
-      )
-
-      // Create refund transaction record
-      const transaction = {
-        id: new Date().getTime().toString(),
-        email: order.customerEmail,
-        type: 'credit',
-        description: `Admin Order Cancellation Refund - ${data.orderId}`,
-        amount: order.totalAmount,
-        coins: order.totalAmount,
-        paymentMethod: 'wallet',
-        status: 'completed',
-        orderId: data.orderId,
-        created_at: new Date(),
-        date: new Date().toISOString().split('T')[0],
-        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      // Refund amount to customer wallet only if payment method is not COD
+      if (order.paymentMethod !== 'cod') {
+        await db.collection('customers').updateOne(
+          { email: order.customerEmail },
+          { 
+            $inc: { coinBalance: order.totalAmount },
+            $set: { updated_at: new Date() }
+          }
+        )
       }
 
-      await db.collection('transactions').insertOne(transaction)
+      // Create refund transaction record only if payment method is not COD
+      if (order.paymentMethod !== 'cod') {
+        const transaction = {
+          id: new Date().getTime().toString(),
+          email: order.customerEmail,
+          type: 'credit',
+          description: `Admin Order Cancellation Refund - ${data.orderId}`,
+          amount: order.totalAmount,
+          coins: order.totalAmount,
+          paymentMethod: 'wallet',
+          status: 'completed',
+          orderId: data.orderId,
+          created_at: new Date(),
+          date: new Date().toISOString().split('T')[0],
+          time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+        }
+
+        await db.collection('transactions').insertOne(transaction)
+      }
 
       // Create notification for customer
+      const refundMessage = order.paymentMethod === 'cod' 
+        ? `Your order ${data.orderId} has been cancelled by admin.`
+        : `Your order ${data.orderId} has been cancelled by admin and ${order.totalAmount} ₹ have been refunded to your wallet.`
+      
       const notification = {
         customerEmail: order.customerEmail,
         title: 'Order Cancelled',
-        message: `Your order ${data.orderId} has been cancelled by admin and ${order.totalAmount} ₹ have been refunded to your wallet.`,
+        message: refundMessage,
         type: 'order',
         orderId: data.orderId,
         read: false,

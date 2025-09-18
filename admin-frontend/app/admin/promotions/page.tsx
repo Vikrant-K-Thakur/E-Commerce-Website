@@ -115,7 +115,7 @@ export default function PromotionsMarketing() {
 
   const adjustUserCoins = () => {
     if (selectedUser && coinAdjustment) {
-      console.log(`Adjusting ${coinAdjustment} ₹ for user ${selectedUser}`)
+      console.log(`Adjusting ${coinAdjustment} coins for user ${selectedUser}`)
       // TODO: Implement coin adjustment logic
     }
   }
@@ -297,7 +297,7 @@ export default function PromotionsMarketing() {
                 </div>
                 <div>
                   <Label htmlFor="redemption-value" className="text-xs text-gray-600">
-                    Redemption Value (₹ per point)
+                    Redemption Value (coins per point)
                   </Label>
                   <Input
                     id="redemption-value"
@@ -321,9 +321,9 @@ export default function PromotionsMarketing() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Coins className="w-5 h-5" />
-            Adjust User rupee
+            Adjust User Coins
           </CardTitle>
-          <CardDescription>Manually adjust loyalty ₹ for specific users.</CardDescription>
+          <CardDescription>Manually adjust loyalty coins for specific users.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -336,10 +336,10 @@ export default function PromotionsMarketing() {
                   <SelectValue placeholder="Choose user" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="alice-smith">Alice Smith (500 ₹)</SelectItem>
-                  <SelectItem value="bob-johnson">Bob Johnson (1200 ₹)</SelectItem>
-                  <SelectItem value="charlie-brown">Charlie Brown (150 ₹)</SelectItem>
-                  <SelectItem value="diana-prince">Diana Prince (800 ₹)</SelectItem>
+                  <SelectItem value="alice-smith">Alice Smith (500 coins)</SelectItem>
+                  <SelectItem value="bob-johnson">Bob Johnson (1200 coins)</SelectItem>
+                  <SelectItem value="charlie-brown">Charlie Brown (150 coins)</SelectItem>
+                  <SelectItem value="diana-prince">Diana Prince (800 coins)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -357,7 +357,7 @@ export default function PromotionsMarketing() {
             </div>
             <div className="flex items-end">
               <Button onClick={adjustUserCoins} className="w-full bg-purple-600 hover:bg-purple-700">
-                Adjust ₹
+                Adjust Coins
               </Button>
             </div>
           </div>

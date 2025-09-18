@@ -8,7 +8,7 @@ import { clearAuthCookie } from "../lib/auth"
 
 const links = [
   { href: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
-  { href: "/admin/orders", label: "Orders", icon: Package },
+  { href: "/admin/orders", label: "Orders", icon: Package, badge: true },
   { href: "/admin/add-product", label: "Add Product", icon: Package },
   { href: "/admin/product-reviews", label: "Product Reviews", icon: MessageSquare, badge: true },
   { href: "/admin/customers", label: "Customers", icon: Users },
@@ -19,13 +19,27 @@ const links = [
 
 export default function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
   const [newReviewsCount, setNewReviewsCount] = useState(0)
+  const [newOrdersCount, setNewOrdersCount] = useState(0)
   const pathname = usePathname()
 
   useEffect(() => {
     fetchNewReviewsCount()
-    const interval = setInterval(fetchNewReviewsCount, 30000)
+    fetchNewOrdersCount()
+    const interval = setInterval(() => {
+      fetchNewReviewsCount()
+      fetchNewOrdersCount()
+    }, 30000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    // Reset orders count when visiting orders page
+    if (pathname === '/admin/orders') {
+      setNewOrdersCount(0)
+      // Mark orders as viewed
+      markOrdersAsViewed()
+    }
+  }, [pathname])
 
   const fetchNewReviewsCount = async () => {
     try {
@@ -40,6 +54,30 @@ export default function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
     }
   }
 
+  const fetchNewOrdersCount = async () => {
+    try {
+      const response = await fetch('/api/orders?action=getNewCount')
+      const result = await response.json()
+      if (result.success) {
+        setNewOrdersCount(result.count)
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders count:', error)
+    }
+  }
+
+  const markOrdersAsViewed = async () => {
+    try {
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'markAsViewed' })
+      })
+    } catch (error) {
+      console.error('Failed to mark orders as viewed:', error)
+    }
+  }
+
   return (
     <nav className="space-y-1">
       {/* Emphasize catalog scope */}
@@ -50,7 +88,8 @@ export default function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
 
       {links.map(({ href, label, icon: Icon, badge }) => {
         const active = pathname === href
-        const showBadge = badge && label === "Product Reviews" && newReviewsCount > 0
+        const showBadge = badge && ((label === "Product Reviews" && newReviewsCount > 0) || (label === "Orders" && newOrdersCount > 0))
+        const badgeCount = label === "Product Reviews" ? newReviewsCount : newOrdersCount
         return (
           <Link
             key={href}
@@ -63,7 +102,7 @@ export default function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
             {label}
             {showBadge && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {newReviewsCount > 99 ? '99+' : newReviewsCount}
+                {badgeCount > 99 ? '99+' : badgeCount}
               </span>
             )}
           </Link>
