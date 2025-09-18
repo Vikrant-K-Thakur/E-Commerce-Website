@@ -31,7 +31,6 @@ export function ProfileForm() {
   })
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
-  const [generatedOTP, setGeneratedOTP] = useState('') // For demo purposes
 
   const handleSave = async () => {
     setIsLoading(true)
@@ -90,8 +89,7 @@ export function ProfileForm() {
       if (result.success) {
         setOtpSent(true)
         setPasswordStep(2)
-        setGeneratedOTP(result.otp) // For demo purposes
-        alert(`OTP sent to your email! (Demo OTP: ${result.otp})`)
+        alert('OTP sent to your email! Please check your inbox.')
       } else {
         alert(result.error || 'Failed to send OTP')
       }
@@ -146,7 +144,6 @@ export function ProfileForm() {
       otp: ''
     })
     setOtpSent(false)
-    setGeneratedOTP('')
   }
 
   const handleForgotPassword = () => {
@@ -371,14 +368,9 @@ export function ProfileForm() {
                   <h3 className="font-medium">OTP Verification</h3>
                   <p className="text-sm text-gray-600">
                     {isForgotPassword 
-                      ? 'We\'ve sent a password reset OTP to your email address.' 
-                      : 'We\'ve sent a 6-digit OTP to your email address.'}
+                      ? 'We\'ve sent a password reset OTP to your email address. Please check your inbox.' 
+                      : 'We\'ve sent a 6-digit OTP to your email address. Please check your inbox.'}
                   </p>
-                  {generatedOTP && (
-                    <p className="text-xs text-green-600 font-mono bg-green-50 p-2 rounded">
-                      Demo OTP: {generatedOTP}
-                    </p>
-                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -418,7 +410,7 @@ export function ProfileForm() {
                     disabled={passwordLoading}
                     className="text-blue-600"
                   >
-                    Resend OTP
+                    Didn't receive? Resend OTP
                   </Button>
                 </div>
               </>

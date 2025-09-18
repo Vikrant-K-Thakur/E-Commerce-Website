@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MongoClient } from 'mongodb'
 import bcrypt from 'bcryptjs'
+import nodemailer from 'nodemailer'
 
 const client = new MongoClient(process.env.DATABASE_URL!, {
   tls: true,
@@ -25,14 +26,62 @@ function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
-// Send OTP via email (mock implementation)
-async function sendOTPEmail(email: string, otp: string): Promise<boolean> {
+// Send OTP via email using nodemailer
+async function sendOTPEmail(email: string, otp: string, isReset: boolean = false): Promise<boolean> {
   try {
-    // In a real implementation, you would use a service like SendGrid, Nodemailer, etc.
-    console.log(`Sending OTP ${otp} to ${email}`)
+    // Create transporter using Gmail SMTP
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER || 'your-email@gmail.com', // Add your Gmail
+        pass: process.env.EMAIL_PASS || 'your-app-password'      // Add your App Password
+      }
+    })
+
+    const subject = isReset ? 'Password Reset OTP' : 'Change Password OTP'
+    const action = isReset ? 'reset your password' : 'change your password'
     
-    // For demo purposes, we'll just log the OTP
-    // In production, integrate with your email service
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'your-email@gmail.com',
+      to: email,
+      subject: subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">🔐 Security Verification</h1>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef;">
+            <h2 style="color: #333; margin-top: 0;">Your OTP Code</h2>
+            <p style="color: #666; font-size: 16px; line-height: 1.5;">
+              You requested to ${action}. Please use the following OTP to complete the process:
+            </p>
+            
+            <div style="background: white; border: 2px dashed #667eea; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+              <span style="font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 5px; font-family: 'Courier New', monospace;">${otp}</span>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px; margin: 20px 0;">
+              <p style="margin: 0; color: #856404; font-size: 14px;">
+                ⚠️ <strong>Important:</strong> This OTP will expire in 10 minutes. Do not share this code with anyone.
+              </p>
+            </div>
+            
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">
+              If you didn't request this, please ignore this email or contact support.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="color: #999; font-size: 12px; text-align: center;">
+              This is an automated message from E-Commerce Website. Please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      `
+    }
+
+    await transporter.sendMail(mailOptions)
+    console.log(`OTP email sent successfully to ${email}`)
     return true
   } catch (error) {
     console.error('Failed to send OTP email:', error)
@@ -82,16 +131,14 @@ export async function POST(request: NextRequest) {
       )
 
       // Send OTP email
-      const emailSent = await sendOTPEmail(email, generatedOTP)
+      const emailSent = await sendOTPEmail(email, generatedOTP, true)
       if (!emailSent) {
         return NextResponse.json({ success: false, error: 'Failed to send OTP email' })
       }
 
       return NextResponse.json({ 
         success: true, 
-        message: 'Password reset OTP sent to your email',
-        // For demo purposes, include OTP in response (remove in production)
-        otp: generatedOTP
+        message: 'Password reset OTP sent to your email'
       })
     }
 
@@ -133,16 +180,14 @@ export async function POST(request: NextRequest) {
       )
 
       // Send OTP email
-      const emailSent = await sendOTPEmail(email, generatedOTP)
+      const emailSent = await sendOTPEmail(email, generatedOTP, false)
       if (!emailSent) {
         return NextResponse.json({ success: false, error: 'Failed to send OTP email' })
       }
 
       return NextResponse.json({ 
         success: true, 
-        message: 'OTP sent to your email address',
-        // For demo purposes, include OTP in response (remove in production)
-        otp: generatedOTP
+        message: 'OTP sent to your email address'
       })
     }
 
