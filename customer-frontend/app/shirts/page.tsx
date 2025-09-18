@@ -78,7 +78,7 @@ export default function ViewAllProductsPage() {
         name: product.name,
         price: product.price,
         image: product.image,
-        quantity: 1
+        coins: product.coins || 0
       })
     }
   }
@@ -192,12 +192,24 @@ export default function ViewAllProductsPage() {
                     }`}>{product.description}</p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className={`font-semibold text-sm lg:text-base ${
-                      product.available === false ? 'text-red-600' : ''
-                    }`}>₹{product.price}</span>
-                    {product.available === false && (
-                      <span className="text-xs text-red-500 font-medium">Unavailable</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-semibold text-sm lg:text-base ${
+                        product.available === false ? 'text-red-600' : ''
+                      }`}>₹{product.price}</span>
+                      {product.available === false && (
+                        <span className="text-xs text-red-500 font-medium">Unavailable</span>
+                      )}
+                    </div>
+                    {product.coins && product.coins > 0 && product.available !== false && (
+                      <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-full">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">₹</span>
+                        </div>
+                        <span className="text-xs text-blue-700 font-medium">
+                          {product.coins} coins = ₹{product.coins} off
+                        </span>
+                      </div>
                     )}
                   </div>
 

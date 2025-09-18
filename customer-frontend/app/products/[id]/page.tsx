@@ -23,6 +23,7 @@ interface Product {
   images?: string[]
   category?: string
   sizes?: any[]
+  coins?: number
 }
 
 const sizeGuide = {
@@ -122,7 +123,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         name: product.name,
         price: product.price,
         image: (product.images && product.images[0]) || product.image,
-        size: selectedSize || undefined
+        size: selectedSize || undefined,
+        coins: product.coins || 0
       })
     }
   }
@@ -225,6 +227,23 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           <div className="flex items-center gap-3">
             <span className="text-2xl font-bold text-foreground">₹{product.price}</span>
           </div>
+
+          {product.coins && product.coins > 0 && (
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">₹</span>
+                </div>
+                <span className="font-semibold text-blue-800">Coins Discount Available!</span>
+              </div>
+              <p className="text-sm text-blue-700">
+                Use <span className="font-bold">{product.coins} coins</span> to get <span className="font-bold">₹{product.coins} off</span> on this product
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                💡 Add to cart to apply coins discount during checkout
+              </p>
+            </div>
+          )}
 
           <Badge variant="secondary" className="bg-green-100 text-green-800">
             In Stock

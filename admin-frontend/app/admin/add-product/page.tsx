@@ -28,6 +28,7 @@ export default function AddProductPage() {
     productId: '',
     name: '',
     price: '',
+    coins: '',
     description: '',
     images: [''],
     category: '',
@@ -71,6 +72,7 @@ export default function AddProductPage() {
           productId: formData.productId,
           name: formData.name,
           price: parseFloat(formData.price),
+          coins: parseInt(formData.coins) || 0,
           description: formData.description,
           images: formData.images.filter(img => img.trim()),
           category: formData.category,
@@ -81,7 +83,7 @@ export default function AddProductPage() {
 
       const result = await response.json()
       if (result.success) {
-        setFormData({ productId: '', name: '', price: '', description: '', images: [''], category: '', sizes: '', available: true })
+        setFormData({ productId: '', name: '', price: '', coins: '', description: '', images: [''], category: '', sizes: '', available: true })
         setEditingProduct(null)
         fetchProducts()
         toast({
@@ -141,6 +143,7 @@ export default function AddProductPage() {
       productId: product.productId || '',
       name: product.name,
       price: product.price.toString(),
+      coins: product.coins?.toString() || '0',
       description: product.description,
       images: product.images || [product.image || ''],
       category: product.category || '',
@@ -152,7 +155,7 @@ export default function AddProductPage() {
 
   const handleCancelEdit = () => {
     setEditingProduct(null)
-    setFormData({ productId: '', name: '', price: '', description: '', images: [''], category: '', sizes: '', available: true })
+    setFormData({ productId: '', name: '', price: '', coins: '', description: '', images: [''], category: '', sizes: '', available: true })
     setError('')
   }
 
@@ -209,7 +212,7 @@ export default function AddProductPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-600">Price (rupee) *</label>
                 <Input
@@ -220,6 +223,16 @@ export default function AddProductPage() {
                   placeholder="0.00"
                   required
                 />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Coins per order</label>
+                <Input
+                  type="number"
+                  value={formData.coins}
+                  onChange={(e) => setFormData({...formData, coins: e.target.value})}
+                  placeholder="0"
+                />
+                <p className="text-xs text-gray-500 mt-1">Coins customers can use to get discount</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Category</label>
@@ -346,6 +359,7 @@ export default function AddProductPage() {
                   <TableHead className="text-gray-600">Product ID</TableHead>
                   <TableHead className="text-gray-600">Name</TableHead>
                   <TableHead className="text-gray-600">Price</TableHead>
+                  <TableHead className="text-gray-600">Coins</TableHead>
                   <TableHead className="text-gray-600">Category</TableHead>
                   <TableHead className="text-gray-600">Status</TableHead>
                   <TableHead className="text-gray-600">Description</TableHead>
@@ -373,6 +387,9 @@ export default function AddProductPage() {
                     <TableCell className="font-medium text-gray-900">{product.name}</TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="bg-green-100 text-green-800">{product.price} ₹</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800">{product.coins || 0} Coins</Badge>
                     </TableCell>
                     <TableCell className="text-gray-600">{product.category || 'N/A'}</TableCell>
                     <TableCell>

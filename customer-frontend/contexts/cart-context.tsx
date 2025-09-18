@@ -12,6 +12,7 @@ interface CartItem {
   image?: string
   size?: string
   productId?: string
+  coins?: number
 }
 
 interface CartContextType {

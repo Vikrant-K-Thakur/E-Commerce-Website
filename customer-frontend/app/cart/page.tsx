@@ -18,6 +18,7 @@ export default function CartPage() {
   const [availableCoupons, setAvailableCoupons] = useState<any[]>([])
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
   const [walletBalance, setWalletBalance] = useState(0)
+  const [usedCoinsPerItem, setUsedCoinsPerItem] = useState<{[key: string]: boolean}>({})
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
 
   useEffect(() => {
@@ -65,7 +66,14 @@ export default function CartPage() {
   }
 
   const discount = appliedCoupon ? (totalPrice * appliedCoupon.value / 100) : 0
-  const total = totalPrice - discount
+  const coinsDiscount = Object.keys(usedCoinsPerItem).reduce((total, itemId) => {
+    if (usedCoinsPerItem[itemId]) {
+      const item = cartItems.find(i => i.id === itemId)
+      return total + ((item?.coins || 0) * (item?.quantity || 1))
+    }
+    return total
+  }, 0)
+  const total = Math.max(0, totalPrice - discount - coinsDiscount)
 
   const placeOrder = async () => {
     if (!user?.email) return
@@ -95,6 +103,10 @@ export default function CartPage() {
         orderData.discountAmount = discount
       }
       
+      if (coinsDiscount > 0) {
+        orderData.coinsUsed = coinsDiscount
+      }
+      
       if (appliedCoupon?._id) {
         orderData.couponId = appliedCoupon._id
       }
@@ -112,6 +124,7 @@ export default function CartPage() {
         alert(`Order placed successfully! Order ID: ${data.orderId}`)
         clearCart()
         setAppliedCoupon(null)
+        setUsedCoinsPerItem({})
         setWalletBalance(data.newBalance)
       } else {
         if (data.error === 'Insufficient wallet balance') {
@@ -150,6 +163,28 @@ export default function CartPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Cart Items ({totalItems})</h2>
             </div>
+            
+            {/* Coins Discount Summary */}
+            {cartItems.some(item => (item.coins || 0) > 0) && (
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">💰</span>
+                  </div>
+                  <span className="font-semibold text-yellow-800">Coins Discount Available!</span>
+                </div>
+                <p className="text-sm text-yellow-700">
+                  Total coins discount available: <span className="font-bold">
+                    {cartItems.reduce((total, item) => total + ((item.coins || 0) * item.quantity), 0)} coins
+                  </span> = <span className="font-bold">
+                    ₹{cartItems.reduce((total, item) => total + ((item.coins || 0) * item.quantity), 0)}
+                  </span> off
+                </p>
+                <p className="text-xs text-yellow-600 mt-1">
+                  💡 Click "Use coins" on individual items below to apply discounts
+                </p>
+              </div>
+            )}
 
             {cartItems.map((item) => (
               <Card key={item.id} className="overflow-hidden">
@@ -165,8 +200,66 @@ export default function CartPage() {
                         <h3 className="font-medium text-sm line-clamp-2 text-balance">{item.name}</h3>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{item.price} ₹</span>
+                      <div className="space-y-1">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{item.price} ₹</span>
+                            {(item.coins || 0) > 0 && (
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-300">
+                                💰 {item.coins} coins discount
+                              </Badge>
+                            )}
+                          </div>
+                          {(item.coins || 0) > 0 && (
+                            <div className="bg-gradient-to-r from-blue-50 to-transparent border border-blue-200 rounded-lg p-3 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-xs">₹</span>
+                                </div>
+                                <span className="text-sm font-medium text-blue-800">
+                                  Coins Discount: {(item.coins || 0) * item.quantity} coins = ₹{(item.coins || 0) * item.quantity} off
+                                </span>
+                              </div>
+                              {walletBalance >= ((item.coins || 0) * item.quantity) ? (
+                                <div className="flex items-center gap-2">
+                                  {usedCoinsPerItem[item.id] ? (
+                                    <div className="flex items-center justify-between w-full">
+                                      <Badge className="bg-green-100 text-green-700 text-xs px-3 py-1">
+                                        ✓ Applied: -{(item.coins || 0) * item.quantity} coins (₹{(item.coins || 0) * item.quantity})
+                                      </Badge>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-xs text-red-600 hover:bg-red-50"
+                                        onClick={() => setUsedCoinsPerItem(prev => ({...prev, [item.id]: false}))}
+                                      >
+                                        Remove
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 px-3 text-xs bg-blue-600 text-white border-blue-600 hover:bg-blue-700 font-medium"
+                                      onClick={() => setUsedCoinsPerItem(prev => ({...prev, [item.id]: true}))}
+                                    >
+                                      💰 Use {(item.coins || 0) * item.quantity} coins for ₹{(item.coins || 0) * item.quantity} off
+                                    </Button>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="bg-red-50 border border-red-200 rounded p-2">
+                                  <p className="text-xs text-red-700">
+                                    ⚠️ Need {(item.coins || 0) * item.quantity} coins for discount (You have {walletBalance} coins)
+                                  </p>
+                                  <p className="text-xs text-red-600 mt-1">
+                                    Add more coins to your wallet to use this discount
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -260,6 +353,8 @@ export default function CartPage() {
           </Card>
         )}
 
+
+
         {/* Order Summary */}
         {cartItems.length > 0 && (
           <Card>
@@ -279,6 +374,23 @@ export default function CartPage() {
                   </div>
                 )}
 
+                {coinsDiscount > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 my-2">
+                    <div className="flex justify-between items-center text-blue-700">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">₹</span>
+                        </div>
+                        <span className="font-medium">Coins Discount Applied</span>
+                      </div>
+                      <span className="font-bold">-₹{coinsDiscount.toFixed(2)}</span>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1">
+                      💰 You saved ₹{coinsDiscount} using {coinsDiscount} coins!
+                    </p>
+                  </div>
+                )}
+
                 <Separator />
 
                 <div className="flex justify-between font-semibold text-base">
@@ -288,12 +400,20 @@ export default function CartPage() {
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-2">
-                    <Wallet className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium">Wallet Balance</span>
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                      <Wallet className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-blue-800">Your Wallet Balance</span>
+                      <p className="text-xs text-blue-600">Available for discounts</p>
+                    </div>
                   </div>
-                  <span className="font-semibold text-blue-600">{walletBalance.toFixed(2)} ₹</span>
+                  <div className="text-right">
+                    <span className="font-bold text-lg text-blue-700">{walletBalance}</span>
+                    <p className="text-xs text-blue-600">coins</p>
+                  </div>
                 </div>
                 
                 {walletBalance < total && (
@@ -310,13 +430,32 @@ export default function CartPage() {
                 )}
               </div>
 
-              <Button 
-                className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground" 
-                onClick={placeOrder}
-                disabled={isPlacingOrder || walletBalance < total}
-              >
-                {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
-              </Button>
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Payment Options:</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white" 
+                    onClick={placeOrder}
+                    disabled={isPlacingOrder || walletBalance < total}
+                  >
+                    <Wallet className="w-4 h-4 mr-2" />
+                    {isPlacingOrder ? 'Processing...' : 'Pay with Wallet'}
+                  </Button>
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700 text-white" 
+                    onClick={() => alert('Online payment coming soon!')}
+                  >
+                    💳 Online Payment
+                  </Button>
+                </div>
+                <Button 
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => alert('Cash on Delivery available for orders above ₹500')}
+                >
+                  💵 Cash on Delivery
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}

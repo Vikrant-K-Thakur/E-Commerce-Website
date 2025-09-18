@@ -13,6 +13,7 @@ interface Product {
   price: number
   image: string
   sizes?: any[]
+  coins?: number
 }
 
 interface SizeSelectionDialogProps {
@@ -44,7 +45,8 @@ export function SizeSelectionDialog({ product, isOpen, onClose }: SizeSelectionD
       name: product.name,
       price: product.price,
       image: product.image,
-      size: selectedSize || undefined
+      size: selectedSize || undefined,
+      coins: product.coins || 0
     })
 
     setSelectedSize("")
@@ -72,7 +74,17 @@ export function SizeSelectionDialog({ product, isOpen, onClose }: SizeSelectionD
             />
             <div className="flex-1">
               <h3 className="font-medium text-sm">{product.name}</h3>
-              <p className="text-sm font-semibold">{product.price} coins</p>
+              <p className="text-sm font-semibold">₹{product.price}</p>
+              {product.coins && product.coins > 0 && (
+                <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-full mt-1">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">₹</span>
+                  </div>
+                  <span className="text-xs text-blue-700 font-medium">
+                    {product.coins} coins discount
+                  </span>
+                </div>
+              )}
               {product.productId && (
                 <Badge variant="outline" className="text-xs mt-1">
                   {product.productId}

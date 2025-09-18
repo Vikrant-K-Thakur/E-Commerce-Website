@@ -18,7 +18,7 @@ const walletData = {
 const recentOrders: any[] = []
 
 const menuItems = [
-  { icon: Wallet, label: "Wallet", href: "/wallet", badge: null },
+  { icon: Wallet, label: "Transaction History", href: "/wallet", badge: null },
   { icon: MapPin, label: "Your Addresses", href: "/addresses", badge: null },
   { icon: ShoppingBag, label: "Order History", href: "/orders", badge: null },
   { icon: Settings, label: "Settings", href: "/settings", badge: null },
@@ -122,10 +122,10 @@ export default function ProfilePage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground">Wallet</h3>
+              <h3 className="font-semibold text-foreground">Wallet Balance</h3>
               <Link href="/wallet">
                 <Button variant="ghost" size="sm" className="text-secondary">
-                  View All
+                  View History
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
@@ -134,12 +134,7 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Coin Balance</p>
-                <p className="text-2xl font-bold text-foreground">{loading ? '...' : coinBalance} ₹</p>
-                <Link href="/wallet/add-funds">
-                  <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                    Add ₹
-                  </Button>
-                </Link>
+                <p className="text-2xl font-bold text-foreground">{loading ? '...' : coinBalance} Coins</p>
               </div>
             </div>
           </CardContent>

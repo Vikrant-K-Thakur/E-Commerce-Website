@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
         productId: data.productId,
         name: data.name,
         price: parseFloat(data.price),
+        coins: parseInt(data.coins) || 0,
         description: data.description,
         images: data.images || [data.image],
         image: data.images?.[0] || data.image,
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
       const updateData = {
         name: data.name,
         price: parseFloat(data.price),
+        coins: parseInt(data.coins) || 0,
         description: data.description,
         images: data.images || [data.image],
         image: data.images?.[0] || data.image,

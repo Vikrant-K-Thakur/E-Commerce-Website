@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { action, email, items, totalAmount, discountAmount, couponId, orderId, refundAmount } = await request.json()
+    const { action, email, items, totalAmount, discountAmount, coinsUsed, couponId, orderId, refundAmount } = await request.json()
     
     const db = await connectDB()
     if (!db) {
@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
       items,
       subtotal: items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0),
       discountAmount: discountAmount || 0,
+      coinsUsed: coinsUsed || 0,
       totalAmount,
       paymentMethod: 'wallet',
       status: 'confirmed',
@@ -159,23 +160,27 @@ export async function POST(request: NextRequest) {
     // Insert order
     await db.collection('orders').insertOne(order)
 
-    // Deduct amount from wallet
+    // Deduct payment amount from wallet and coins used for discount
     await db.collection('customers').updateOne(
       { email },
       { 
-        $inc: { coinBalance: -totalAmount },
+        $inc: { coinBalance: -(totalAmount + (coinsUsed || 0)) },
         $set: { updated_at: new Date() }
       }
     )
 
     // Create transaction record
+    const transactionDescription = coinsUsed > 0 
+      ? `Order Payment - ${newOrderId} (Used ${coinsUsed} coins for discount)`
+      : `Order Payment - ${newOrderId}`
+    
     const transaction = {
       id: new Date().getTime().toString(),
       email,
       type: 'debit',
-      description: `Order Payment - ${newOrderId}`,
+      description: transactionDescription,
       amount: totalAmount,
-      coins: -totalAmount,
+      coins: -(totalAmount + (coinsUsed || 0)),
       paymentMethod: 'wallet',
       status: 'completed',
       orderId: newOrderId,
@@ -204,7 +209,7 @@ export async function POST(request: NextRequest) {
       success: true, 
       message: 'Order placed successfully',
       orderId: newOrderId,
-      newBalance: currentBalance - totalAmount
+      newBalance: currentBalance - (totalAmount + (coinsUsed || 0))
     })
   } catch (error) {
     console.error('API Error:', error)

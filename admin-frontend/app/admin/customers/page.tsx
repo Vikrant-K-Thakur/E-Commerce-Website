@@ -54,6 +54,10 @@ export default function CustomerManagement() {
   const [showOrdersDialog, setShowOrdersDialog] = useState(false)
   const [selectedCustomerOrders, setSelectedCustomerOrders] = useState<any[]>([])
   const [loadingOrders, setLoadingOrders] = useState(false)
+  const [showSendCoinsDialog, setShowSendCoinsDialog] = useState(false)
+  const [selectedCustomerForCoins, setSelectedCustomerForCoins] = useState<Customer | null>(null)
+  const [coinsToSend, setCoinsToSend] = useState("")
+  const [sendingCoins, setSendingCoins] = useState(false)
   const itemsPerPage = 5
 
   useEffect(() => {
@@ -145,6 +149,7 @@ export default function CustomerManagement() {
         setRewardDescription("")
         setSelectedCustomer("")
         setRewardType("discount")
+        fetchCustomers() // Refresh customer list
       } else {
         alert('Error: ' + (result.error || 'Failed to send reward'))
       }
@@ -153,6 +158,48 @@ export default function CustomerManagement() {
       alert('Network error: Failed to send reward')
     } finally {
       setSendingReward(false)
+    }
+  }
+
+  const sendCoinsToCustomer = async () => {
+    if (!coinsToSend || !selectedCustomerForCoins) {
+      alert('Please enter coins amount')
+      return
+    }
+    
+    setSendingCoins(true)
+    
+    try {
+      const response = await fetch('/api/rewards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sendReward',
+          type: 'coins',
+          value: parseFloat(coinsToSend),
+          title: 'Admin Bonus Coins',
+          description: `Bonus coins sent by admin`,
+          customerEmail: selectedCustomerForCoins.email,
+          expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 1 year
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        alert(`Successfully sent ${coinsToSend} coins to ${selectedCustomerForCoins.name}!`)
+        setShowSendCoinsDialog(false)
+        setCoinsToSend("")
+        setSelectedCustomerForCoins(null)
+        fetchCustomers() // Refresh customer list
+      } else {
+        alert('Error: ' + (result.error || 'Failed to send coins'))
+      }
+    } catch (error) {
+      console.error('Failed to send coins:', error)
+      alert('Network error: Failed to send coins')
+    } finally {
+      setSendingCoins(false)
     }
   }
 
@@ -218,7 +265,7 @@ export default function CustomerManagement() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Rupee Balance</p>
+                <p className="text-sm font-medium text-gray-600">Total Coin Balance</p>
                 <p className="text-3xl font-bold text-gray-900">{customers.reduce((total, c) => total + c.coinBalance, 0).toLocaleString()}</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -275,7 +322,7 @@ export default function CustomerManagement() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="discount">Discount (%)</SelectItem>
-                          <SelectItem value="coins">Gift ₹</SelectItem>
+                          <SelectItem value="coins">Gift Coins</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -286,7 +333,7 @@ export default function CustomerManagement() {
                         type="number"
                         value={rewardValue}
                         onChange={(e) => setRewardValue(e.target.value)}
-                        placeholder={rewardType === 'discount' ? 'Enter percentage' : 'Enter amount(₹) '}
+                        placeholder={rewardType === 'discount' ? 'Enter percentage' : 'Enter coins amount'}
                       />
                     </div>
                     
@@ -363,7 +410,7 @@ export default function CustomerManagement() {
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">NAME</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">EMAIL</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">PHONE</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">RUPEE BALANCE</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">COIN BALANCE</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">STATUS</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600 text-sm">ORDER HISTORY</th>
                   </tr>
@@ -394,7 +441,7 @@ export default function CustomerManagement() {
                         <td className="py-4 px-4 text-gray-600">{customer.email}</td>
                         <td className="py-4 px-4 text-gray-600">{customer.phone}</td>
                         <td className="py-4 px-4">
-                          <span className="font-medium text-gray-900">{customer.coinBalance.toLocaleString()} ₹</span>
+                          <span className="font-medium text-gray-900">{customer.coinBalance.toLocaleString()} Coins</span>
                         </td>
                         <td className="py-4 px-4">
                           <Badge
@@ -405,9 +452,22 @@ export default function CustomerManagement() {
                           </Badge>
                         </td>
                         <td className="py-4 px-4">
-                          <Button variant="link" className="p-0 h-auto text-blue-600">
-                            {customer.orderHistory} orders
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button variant="link" className="p-0 h-auto text-blue-600">
+                              {customer.orderHistory} orders
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="text-xs"
+                              onClick={() => {
+                                setSelectedCustomerForCoins(customer)
+                                setShowSendCoinsDialog(true)
+                              }}
+                            >
+                              Send Coins
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -517,6 +577,44 @@ export default function CustomerManagement() {
                 </Card>
               ))
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Coins Dialog */}
+      <Dialog open={showSendCoinsDialog} onOpenChange={setShowSendCoinsDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Coins to {selectedCustomerForCoins?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Coins Amount</Label>
+              <Input
+                type="number"
+                value={coinsToSend}
+                onChange={(e) => setCoinsToSend(e.target.value)}
+                placeholder="Enter coins amount"
+              />
+            </div>
+            
+            <Button 
+              onClick={sendCoinsToCustomer} 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              disabled={!coinsToSend || sendingCoins}
+            >
+              {sendingCoins ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Coins className="w-4 h-4 mr-2" />
+                  Send Coins
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

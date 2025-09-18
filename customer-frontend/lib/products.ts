@@ -5,8 +5,11 @@ export interface Product {
   price: number
   description: string
   image: string
+  images?: string[]
   category?: string
   sizes?: string[]
+  coins?: number
+  available?: boolean
   created_at: Date
   updated_at: Date
 }

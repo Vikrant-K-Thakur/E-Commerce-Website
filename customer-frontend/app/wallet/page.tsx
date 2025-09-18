@@ -2,17 +2,14 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, TrendingUp, TrendingDown, Clock, Bell, IndianRupee } from "lucide-react"
+import { ArrowLeft, TrendingUp, TrendingDown, Clock, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 
-const quickAmounts = [25.0, 50.0, 100.0]
-
 export default function WalletPage() {
-  const [addAmount, setAddAmount] = useState("")
   const [coinBalance, setCoinBalance] = useState(0)
   const [transactions, setTransactions] = useState<any[]>([])
   const [walletLoading, setWalletLoading] = useState(true)
@@ -50,9 +47,7 @@ export default function WalletPage() {
     }
   }
 
-  const handleQuickAmount = (amount: number) => {
-    setAddAmount(amount.toFixed(2))
-  }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,7 +59,7 @@ export default function WalletPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <h1 className="text-lg font-semibold">Wallet</h1>
+          <h1 className="text-lg font-semibold">Transaction History</h1>
           <Button variant="ghost" size="icon">
             <Bell className="w-5 h-5" />
           </Button>
@@ -76,78 +71,23 @@ export default function WalletPage() {
         <Card className="bg-gradient-to-r from-secondary/10 to-primary/10 border-0">
           <CardContent className="p-6 text-center space-y-4">
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Current Balance</p>
-              <p className="text-4xl font-bold text-foreground">{walletLoading ? 'Loading...' : `${coinBalance} ₹`}</p>
-            </div>
-
-            <div className="flex gap-3">
-              <Link href="/wallet/add-funds" className="flex-1">
-                <Button className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Funds
-                </Button>
-              </Link>
-              <Link href="/wallet/history" className="flex-1">
-                <Button variant="outline" className="w-full bg-transparent">
-                  View History
-                </Button>
-              </Link>
+              <p className="text-sm text-muted-foreground">Coin Balance</p>
+              <p className="text-4xl font-bold text-foreground">{walletLoading ? 'Loading...' : `${coinBalance} Coins`}</p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Add Funds */}
+
+
+        {/* All Transactions */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Add Funds</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Amount to Add</label>
-              <div className="relative">
-                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  value={addAmount}
-                  onChange={(e) => setAddAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {quickAmounts.map((amount) => (
-                <Button
-                  key={amount}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleQuickAmount(amount)}
-                  className="text-xs"
-                >
-                  {amount.toFixed(0)} ₹
-                </Button>
-              ))}
-            </div>
-
-            <Button
-              className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-              disabled={!addAmount || Number.parseFloat(addAmount) <= 0}
-            >
-              Confirm Add Funds
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Recent Transactions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recent Transactions</CardTitle>
+            <CardTitle className="text-base">All Transactions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {transactions.length > 0 ? (
-                transactions.slice(0, 5).map((transaction) => (
+                transactions.map((transaction) => (
                   <div key={transaction.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div
@@ -177,7 +117,7 @@ export default function WalletPage() {
                     </div>
                     <div className="text-right">
                       <p className={`font-semibold ${transaction.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} ₹
+                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} Coins
                       </p>
                     </div>
                   </div>
@@ -185,15 +125,10 @@ export default function WalletPage() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <p>No transactions yet</p>
+                  <p className="text-sm mt-2">Your transaction history will appear here</p>
                 </div>
               )}
             </div>
-
-            <Link href="/wallet/history">
-              <Button variant="ghost" className="w-full mt-4">
-                View All Transactions
-              </Button>
-            </Link>
           </CardContent>
         </Card>
       </div>
