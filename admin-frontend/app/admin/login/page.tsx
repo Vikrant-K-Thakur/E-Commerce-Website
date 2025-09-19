@@ -50,7 +50,7 @@ export default function AdminLogin() {
         <CardHeader className="space-y-4 pb-8">
           <div className="flex justify-center">
             <div className="bg-blue-600 p-3 rounded-full">
-              <img src="/logo.jpg" alt="Logo" className="h-8 w-auto brightness-0 invert" />
+              <img src="/logo.jpg" alt="Logo" className="h-8 w-auto" />
             </div>
           </div>
           <CardTitle className="text-center text-2xl font-bold text-gray-800">

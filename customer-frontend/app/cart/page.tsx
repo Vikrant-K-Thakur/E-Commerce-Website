@@ -19,6 +19,7 @@ export default function CartPage() {
   const { user } = useAuth()
   const [availableCoupons, setAvailableCoupons] = useState<any[]>([])
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [sessionUsedCoupons, setSessionUsedCoupons] = useState<string[]>([])
   const [walletBalance, setWalletBalance] = useState(0)
   const [usedCoinsPerItem, setUsedCoinsPerItem] = useState<{[key: string]: boolean}>({})
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
@@ -32,7 +33,7 @@ export default function CartPage() {
 
   useEffect(() => {
     if (user?.email) {
-      fetchAvailableCoupons()
+      loadSessionUsedCoupons()
       fetchWalletBalance()
       fetchPickupPoints()
       getUserLocation()
@@ -49,6 +50,47 @@ export default function CartPage() {
     }
   }, [user?.email])
 
+  // Fetch coupons when sessionUsedCoupons changes
+  useEffect(() => {
+    if (user?.email) {
+      fetchAvailableCoupons()
+    }
+  }, [user?.email, sessionUsedCoupons, appliedCoupon])
+
+  // Cleanup session data when component unmounts or user changes
+  useEffect(() => {
+    return () => {
+      // Only clear if there's an applied coupon that wasn't used in a successful order
+      if (appliedCoupon && user?.email) {
+        const currentUsedCoupons = JSON.parse(localStorage.getItem(`usedCoupons_${user.email}`) || '[]')
+        const updatedUsedCoupons = currentUsedCoupons.filter((id: string) => id !== appliedCoupon._id)
+        if (updatedUsedCoupons.length !== currentUsedCoupons.length) {
+          localStorage.setItem(`usedCoupons_${user.email}`, JSON.stringify(updatedUsedCoupons))
+        }
+      }
+    }
+  }, [appliedCoupon, user?.email])
+
+  const loadSessionUsedCoupons = () => {
+    try {
+      const stored = localStorage.getItem(`usedCoupons_${user?.email}`)
+      if (stored) {
+        setSessionUsedCoupons(JSON.parse(stored))
+      }
+    } catch (error) {
+      console.error('Failed to load session used coupons:', error)
+    }
+  }
+
+  const saveSessionUsedCoupons = (coupons: string[]) => {
+    try {
+      localStorage.setItem(`usedCoupons_${user?.email}`, JSON.stringify(coupons))
+      setSessionUsedCoupons(coupons)
+    } catch (error) {
+      console.error('Failed to save session used coupons:', error)
+    }
+  }
+
   const fetchAvailableCoupons = async () => {
     try {
       const response = await fetch(`/api/rewards?email=${user?.email}`)
@@ -56,7 +98,8 @@ export default function CartPage() {
       if (data.success) {
         const validCoupons = data.data.filter((reward: any) => 
           reward.type === 'discount' && 
-          !reward.isUsed && // Never show used coupons, even from cancelled orders
+          !reward.isUsed && // Never show used coupons from database
+          !sessionUsedCoupons.includes(reward._id) && // Never show session used coupons
           new Date(reward.expiresAt) > new Date() &&
           (!appliedCoupon || reward._id !== appliedCoupon._id) // Exclude currently applied coupon
         )
@@ -148,15 +191,19 @@ export default function CartPage() {
     
     if (confirmed) {
       setAppliedCoupon(coupon)
-      // Refresh available coupons to remove the applied one
-      fetchAvailableCoupons()
+      // Mark coupon as used in session to prevent reuse even after refresh
+      const updatedUsedCoupons = [...sessionUsedCoupons, coupon._id]
+      saveSessionUsedCoupons(updatedUsedCoupons)
     }
   }
 
   const removeCoupon = () => {
+    if (appliedCoupon) {
+      // Remove from session used coupons since user is removing it before placing order
+      const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== appliedCoupon._id)
+      saveSessionUsedCoupons(updatedUsedCoupons)
+    }
     setAppliedCoupon(null)
-    // Refresh available coupons to show the removed one again
-    fetchAvailableCoupons()
   }
 
   const discount = appliedCoupon ? (totalPrice * appliedCoupon.value / 100) : 0
@@ -241,14 +288,36 @@ export default function CartPage() {
               const successMessage = `Order placed successfully! Order ID: ${verifyResult.orderId}` +
                 (appliedCoupon ? `\n\nNote: Your ${appliedCoupon.value}% discount coupon has been used and cannot be reused.` : '')
               alert(successMessage)
+
+              // Persist the used coupon in localStorage so it cannot be reused after a page refresh
+              if (appliedCoupon && user?.email) {
+                try {
+                  const key = `usedCoupons_${user.email}`
+                  const stored = JSON.parse(localStorage.getItem(key) || '[]')
+                  if (!stored.includes(appliedCoupon._id)) {
+                    const updated = [...stored, appliedCoupon._id]
+                    localStorage.setItem(key, JSON.stringify(updated))
+                    setSessionUsedCoupons(updated)
+                  }
+                } catch (e) {
+                  console.error('Failed to persist used coupon after order:', e)
+                }
+              }
+
               clearCart()
               setAppliedCoupon(null)
               setUsedCoinsPerItem({})
+              // Do not clear sessionUsedCoupons nor remove localStorage — keep coupon marked as used
             } else {
               throw new Error(verifyResult.error || 'Order placement failed')
             }
           } catch (error) {
             alert('Order placement failed. Please contact support if payment was deducted.')
+            // On payment failure, remove the coupon from session used list since order failed
+            if (appliedCoupon) {
+              const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== appliedCoupon._id)
+              saveSessionUsedCoupons(updatedUsedCoupons)
+            }
           }
         },
         prefill: {
@@ -268,6 +337,11 @@ export default function CartPage() {
       rzp.open()
     } catch (error) {
       alert('Payment failed. Please try again.')
+      // On payment failure, remove the coupon from session used list since order failed
+      if (appliedCoupon) {
+        const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== appliedCoupon._id)
+        saveSessionUsedCoupons(updatedUsedCoupons)
+      }
       setIsPlacingOrder(false)
     }
   }
@@ -322,14 +396,41 @@ export default function CartPage() {
         const successMessage = `Order placed successfully! Order ID: ${data.orderId}. Pay ₹${total} on delivery.` +
           (appliedCoupon ? `\n\nNote: Your ${appliedCoupon.value}% discount coupon has been used and cannot be reused.` : '')
         alert(successMessage)
+
+        // Persist the used coupon in localStorage so it cannot be reused after a page refresh
+        if (appliedCoupon && user?.email) {
+          try {
+            const key = `usedCoupons_${user.email}`
+            const stored = JSON.parse(localStorage.getItem(key) || '[]')
+            if (!stored.includes(appliedCoupon._id)) {
+              const updated = [...stored, appliedCoupon._id]
+              localStorage.setItem(key, JSON.stringify(updated))
+              setSessionUsedCoupons(updated)
+            }
+          } catch (e) {
+            console.error('Failed to persist used coupon after order:', e)
+          }
+        }
+
         clearCart()
         setAppliedCoupon(null)
         setUsedCoinsPerItem({})
+        // Do not clear sessionUsedCoupons nor remove localStorage — keep coupon marked as used
       } else {
         alert('Failed to place order: ' + data.error)
+        // On order failure, remove the coupon from session used list since order failed
+        if (appliedCoupon) {
+          const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== appliedCoupon._id)
+          saveSessionUsedCoupons(updatedUsedCoupons)
+        }
       }
     } catch (error) {
       alert('Failed to place order. Please try again.')
+      // On order failure, remove the coupon from session used list since order failed
+      if (appliedCoupon) {
+        const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== appliedCoupon._id)
+        saveSessionUsedCoupons(updatedUsedCoupons)
+      }
     } finally {
       setIsPlacingOrder(false)
     }

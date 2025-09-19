@@ -106,7 +106,7 @@ export function DesktopSidebar() {
           <div className="p-6 border-b border-sidebar-border">
             <Link href="/" className="flex items-center gap-2">
               <img src="/images/logo.png" alt="NXTFIT" className="w-8 h-8" />
-              <span className="text-xl font-bold text-sidebar-foreground">NXTFIT</span>
+              <span className="text-xl font-bold text-sidebar-foreground">NXTFIT Clothing</span>
             </Link>
           </div>
 

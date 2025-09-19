@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           {/* Static left sidebar on laptop/desktop */}
           <aside className="hidden lg:block w-72 shrink-0 border-r bg-white min-h-screen">
             <div className="h-14 border-b px-4 flex items-center gap-2">
-              <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
+              <img src="/logo.jpg" alt="Logo" className="h-8 w-auto" />
               <span className="text-sm font-semibold text-gray-900">Admin</span>
             </div>
             <div className="p-3">
