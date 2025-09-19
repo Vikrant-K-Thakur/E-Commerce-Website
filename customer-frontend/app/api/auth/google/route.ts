@@ -1,4 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { MongoClient } from 'mongodb'
+
+const client = new MongoClient(process.env.DATABASE_URL!, {
+  tls: true,
+  tlsAllowInvalidCertificates: true,
+  tlsAllowInvalidHostnames: true,
+  serverSelectionTimeoutMS: 5000,
+  connectTimeoutMS: 10000,
+})
+
+async function connectDB() {
+  try {
+    if (!client.topology || !client.topology.isConnected()) {
+      await client.connect()
+    }
+    return client.db('ecommerce')
+  } catch (error) {
+    console.error('MongoDB connection failed:', error)
+    return null
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,28 +59,59 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Failed to get user data' })
     }
 
-    // Here you would typically:
-    // 1. Check if user exists in your database
-    // 2. Create new user if doesn't exist
-    // 3. Generate JWT token
-    // 4. Return user data and token
-
-    // For now, return mock success response
-    const user = {
-      id: userData.id,
-      email: userData.email,
-      name: userData.name,
-      picture: userData.picture,
-      provider: 'google'
+    // Connect to database and handle user
+    const db = await connectDB()
+    if (!db) {
+      return NextResponse.json({ success: false, error: 'Database connection failed' })
     }
 
-    // Generate a simple token (in production, use proper JWT)
-    const token = Buffer.from(JSON.stringify({ userId: userData.id, email: userData.email })).toString('base64')
+    // Check if user exists in database
+    let existingUser = await db.collection('customers').findOne({ email: userData.email })
+    
+    if (!existingUser) {
+      // Create new user
+      const newUser = {
+        id: Date.now().toString(),
+        name: userData.name,
+        email: userData.email,
+        phone: '',
+        address: '',
+        avatar: userData.picture,
+        provider: 'google',
+        googleId: userData.id,
+        coinBalance: 0,
+        created_at: new Date(),
+        updated_at: new Date()
+      }
+      
+      await db.collection('customers').insertOne(newUser)
+      existingUser = newUser
+    } else {
+      // Update existing user with Google info if needed
+      await db.collection('customers').updateOne(
+        { email: userData.email },
+        { 
+          $set: { 
+            avatar: userData.picture,
+            googleId: userData.id,
+            updated_at: new Date()
+          }
+        }
+      )
+    }
+
+    const user = {
+      id: existingUser.id,
+      name: existingUser.name,
+      email: existingUser.email,
+      phone: existingUser.phone || '',
+      address: existingUser.address || '',
+      avatar: userData.picture || '/placeholder.svg?height=40&width=40'
+    }
 
     return NextResponse.json({
       success: true,
-      user,
-      token
+      user
     })
   } catch (error) {
     console.error('Google auth error:', error)

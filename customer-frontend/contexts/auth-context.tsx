@@ -19,6 +19,7 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string, phone?: string) => Promise<void>
   register: (name: string, email: string, password: string, phone?: string) => Promise<void>
+  googleLogin: () => void
   updateProfile: (data: { name?: string; phone?: string; address?: string }) => Promise<void>
   logout: () => void
   showAuthModal: boolean
@@ -42,6 +43,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshUserData(userData.email)
     }
     setIsLoading(false)
+
+    // Listen for storage events (for Google login callback)
+    const handleStorageChange = () => {
+      const savedUser = localStorage.getItem("nxtfit_user")
+      if (savedUser) {
+        const userData = JSON.parse(savedUser)
+        setUser(userData)
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
   }, [])
 
   const refreshUserData = async (email: string) => {
@@ -150,6 +163,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("nxtfit_user", JSON.stringify(updatedUser))
   }
 
+  const googleLogin = () => {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback/google`
+    const scope = 'openid email profile'
+    
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=code&` +
+      `scope=${encodeURIComponent(scope)}&` +
+      `access_type=offline&` +
+      `prompt=consent`
+    
+    window.location.href = googleAuthUrl
+  }
+
   const logout = () => {
     setUser(null)
     localStorage.removeItem("nxtfit_user")
@@ -163,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         register,
         updateProfile,
+        googleLogin,
         logout,
         showAuthModal,
         setShowAuthModal,

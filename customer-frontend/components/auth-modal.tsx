@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { Loader2, Mail, Lock, User, Phone } from "lucide-react"
 
 export function AuthModal() {
-  const { showAuthModal, setShowAuthModal, login, register, isLoading } = useAuth()
+  const { showAuthModal, setShowAuthModal, login, register, googleLogin, isLoading } = useAuth()
   const [loginForm, setLoginForm] = useState({ email: "", password: "" })
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "", phone: "" })
 
@@ -103,7 +103,7 @@ export function AuthModal() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="w-full bg-transparent">
+              <Button variant="outline" className="w-full bg-transparent" onClick={googleLogin}>
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"

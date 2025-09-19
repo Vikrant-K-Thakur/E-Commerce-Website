@@ -39,8 +39,10 @@ export default function GoogleCallback() {
 
         if (result.success) {
           setStatus("Login successful! Redirecting...")
-          localStorage.setItem('user', JSON.stringify(result.user))
-          localStorage.setItem('token', result.token)
+          localStorage.setItem('nxtfit_user', JSON.stringify(result.user))
+          
+          // Trigger auth context update
+          window.dispatchEvent(new Event('storage'))
           
           setTimeout(() => router.push('/'), 1000)
         } else {
