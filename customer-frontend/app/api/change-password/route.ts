@@ -13,7 +13,9 @@ const client = new MongoClient(process.env.DATABASE_URL!, {
 
 async function connectDB() {
   try {
-    await client.connect()
+    if (!client.topology || !client.topology.isConnected()) {
+      await client.connect()
+    }
     return client.db('ecommerce')
   } catch (error) {
     console.error('MongoDB connection failed:', error)
@@ -29,12 +31,16 @@ function generateOTP(): string {
 // Send OTP via email using nodemailer
 async function sendOTPEmail(email: string, otp: string, isReset: boolean = false): Promise<boolean> {
   try {
+    console.log('Attempting to send email to:', email)
+    console.log('Email user configured:', process.env.EMAIL_USER ? 'Yes' : 'No')
+    console.log('Email pass configured:', process.env.EMAIL_PASS ? 'Yes' : 'No')
+    
     // Create transporter using Gmail SMTP
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER || 'your-email@gmail.com', // Add your Gmail
-        pass: process.env.EMAIL_PASS || 'your-app-password'      // Add your App Password
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
       }
     })
 
@@ -42,7 +48,7 @@ async function sendOTPEmail(email: string, otp: string, isReset: boolean = false
     const action = isReset ? 'reset your password' : 'change your password'
     
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'your-email@gmail.com',
+      from: process.env.EMAIL_USER,
       to: email,
       subject: subject,
       html: `
@@ -80,11 +86,12 @@ async function sendOTPEmail(email: string, otp: string, isReset: boolean = false
       `
     }
 
-    await transporter.sendMail(mailOptions)
-    console.log(`OTP email sent successfully to ${email}`)
+    const result = await transporter.sendMail(mailOptions)
+    console.log(`OTP email sent successfully to ${email}`, result.messageId)
     return true
   } catch (error) {
     console.error('Failed to send OTP email:', error)
+    console.error('Error details:', error.message)
     return false
   }
 }
@@ -112,7 +119,7 @@ export async function POST(request: NextRequest) {
 
       // Check if customer has a password (for social login users)
       if (!customer.password) {
-        return NextResponse.json({ success: false, error: 'This account uses social login. Please login with Google/GitHub.' })
+        return NextResponse.json({ success: false, error: 'This account uses social login. Please login with Google.' })
       }
 
       // Generate and store OTP
@@ -159,7 +166,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'No password set. Please use social login.' })
       }
 
-      const isValidPassword = await bcrypt.compare(currentPassword, customer.password)
+      // Check if password is hashed (starts with $2a, $2b, etc.) or plain text
+      let isValidPassword = false
+      if (customer.password.startsWith('$2')) {
+        // Password is hashed, use bcrypt compare
+        isValidPassword = await bcrypt.compare(currentPassword, customer.password)
+      } else {
+        // Password is plain text, direct comparison
+        isValidPassword = currentPassword === customer.password
+      }
+      
       if (!isValidPassword) {
         return NextResponse.json({ success: false, error: 'Current password is incorrect' })
       }
@@ -219,7 +235,7 @@ export async function POST(request: NextRequest) {
       const hashedPassword = await bcrypt.hash(newPassword, 12)
 
       // Update password and clear OTP
-      await db.collection('customers').updateOne(
+      const updateResult = await db.collection('customers').updateOne(
         { email },
         {
           $set: {
@@ -233,6 +249,9 @@ export async function POST(request: NextRequest) {
           }
         }
       )
+
+      console.log('Password update result:', updateResult.modifiedCount > 0 ? 'Success' : 'Failed')
+      console.log('Updated password for email:', email)
 
       return NextResponse.json({ 
         success: true, 
