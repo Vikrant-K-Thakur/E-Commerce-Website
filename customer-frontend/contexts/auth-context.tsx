@@ -80,9 +80,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get existing user from database
     const existingUser = await getCustomer(email)
     
-    if (existingUser && existingUser.password && existingUser.password !== password) {
+    if (!existingUser) {
       setIsLoading(false)
-      throw new Error('Invalid password')
+      throw new Error('No account found with this email address')
+    }
+    
+    if (existingUser.password) {
+      // Check if password is hashed or plain text
+      let isValidPassword = false
+      if (existingUser.password.startsWith('$2')) {
+        // Password is hashed - this shouldn't happen in current implementation but handle it
+        const bcrypt = require('bcryptjs')
+        isValidPassword = await bcrypt.compare(password, existingUser.password)
+      } else {
+        // Password is plain text
+        isValidPassword = password === existingUser.password
+      }
+      
+      if (!isValidPassword) {
+        setIsLoading(false)
+        throw new Error('Incorrect password. Please try again.')
+      }
     }
 
     const userData = existingUser ? {

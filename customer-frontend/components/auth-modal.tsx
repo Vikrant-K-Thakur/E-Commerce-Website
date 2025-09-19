@@ -15,23 +15,123 @@ export function AuthModal() {
   const { showAuthModal, setShowAuthModal, login, register, googleLogin, isLoading } = useAuth()
   const [loginForm, setLoginForm] = useState({ email: "", password: "" })
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "", phone: "" })
+  const [errorMessage, setErrorMessage] = useState("")
+  const [successMessage, setSuccessMessage] = useState("")
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [forgotPasswordStep, setForgotPasswordStep] = useState(1)
+  const [forgotPasswordData, setForgotPasswordData] = useState({ email: "", newPassword: "", confirmPassword: "", otp: "" })
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage("")
+    setSuccessMessage("")
     try {
       await login(loginForm.email, loginForm.password)
-    } catch (error) {
+      setSuccessMessage("Login successful!")
+    } catch (error: any) {
       console.error("Login failed:", error)
+      setErrorMessage(error.message || "Login failed. Please check your credentials.")
     }
   }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage("")
+    setSuccessMessage("")
     try {
       await register(registerForm.name, registerForm.email, registerForm.password)
-    } catch (error) {
+      setSuccessMessage("Account created successfully!")
+    } catch (error: any) {
       console.error("Registration failed:", error)
+      setErrorMessage(error.message || "Registration failed. Please try again.")
     }
+  }
+
+  const handleForgotPasswordSendOTP = async () => {
+    if (!forgotPasswordData.email) {
+      setErrorMessage("Please enter your email address")
+      return
+    }
+    if (!forgotPasswordData.newPassword || !forgotPasswordData.confirmPassword) {
+      setErrorMessage("Please fill in both password fields")
+      return
+    }
+    if (forgotPasswordData.newPassword !== forgotPasswordData.confirmPassword) {
+      setErrorMessage("Passwords do not match")
+      return
+    }
+    if (forgotPasswordData.newPassword.length < 6) {
+      setErrorMessage("Password must be at least 6 characters long")
+      return
+    }
+
+    setForgotPasswordLoading(true)
+    setErrorMessage("")
+    try {
+      const response = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'forgotPassword',
+          email: forgotPasswordData.email
+        })
+      })
+
+      const result = await response.json()
+      if (result.success) {
+        setForgotPasswordStep(2)
+        setSuccessMessage('OTP sent to your email! Please check your inbox.')
+      } else {
+        setErrorMessage(result.error || 'Failed to send OTP')
+      }
+    } catch (error) {
+      setErrorMessage('Failed to send OTP. Please try again.')
+    } finally {
+      setForgotPasswordLoading(false)
+    }
+  }
+
+  const handleForgotPasswordReset = async () => {
+    if (!forgotPasswordData.otp) {
+      setErrorMessage("Please enter the OTP")
+      return
+    }
+
+    setForgotPasswordLoading(true)
+    setErrorMessage("")
+    try {
+      const response = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'changePassword',
+          email: forgotPasswordData.email,
+          newPassword: forgotPasswordData.newPassword,
+          otp: forgotPasswordData.otp
+        })
+      })
+
+      const result = await response.json()
+      if (result.success) {
+        setSuccessMessage('Password reset successfully! You can now login with your new password.')
+        handleCloseForgotPassword()
+      } else {
+        setErrorMessage(result.error || 'Failed to reset password')
+      }
+    } catch (error) {
+      setErrorMessage('Failed to reset password. Please try again.')
+    } finally {
+      setForgotPasswordLoading(false)
+    }
+  }
+
+  const handleCloseForgotPassword = () => {
+    setShowForgotPassword(false)
+    setForgotPasswordStep(1)
+    setForgotPasswordData({ email: "", newPassword: "", confirmPassword: "", otp: "" })
+    setErrorMessage("")
+    setSuccessMessage("")
   }
 
   return (
@@ -48,6 +148,18 @@ export function AuthModal() {
           </TabsList>
 
           <TabsContent value="login" className="space-y-4 mt-6">
+            {/* Error/Success Messages */}
+            {errorMessage && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {errorMessage}
+              </div>
+            )}
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                {successMessage}
+              </div>
+            )}
+            
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-email">Email</Label>
@@ -79,6 +191,18 @@ export function AuthModal() {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-blue-600 hover:text-blue-700 p-0 h-auto"
+                  onClick={() => setShowForgotPassword(true)}
+                >
+                  Forgot password?
+                </Button>
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
@@ -126,6 +250,18 @@ export function AuthModal() {
           </TabsContent>
 
           <TabsContent value="register" className="space-y-4 mt-6">
+            {/* Error/Success Messages */}
+            {errorMessage && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {errorMessage}
+              </div>
+            )}
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                {successMessage}
+              </div>
+            )}
+            
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="register-name">Full Name</Label>
@@ -208,6 +344,142 @@ export function AuthModal() {
           </TabsContent>
         </Tabs>
       </DialogContent>
+      
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" />
+              Reset Password
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Error/Success Messages */}
+            {errorMessage && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {errorMessage}
+              </div>
+            )}
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                {successMessage}
+              </div>
+            )}
+            
+            {forgotPasswordStep === 1 ? (
+              // Step 1: Enter email and new password
+              <>
+                <div className="bg-blue-50 p-3 rounded-lg mb-4">
+                  <p className="text-sm text-blue-700">
+                    Enter your email and new password. We'll send you an OTP to reset your password.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Email Address</label>
+                  <Input
+                    type="email"
+                    value={forgotPasswordData.email}
+                    onChange={(e) => setForgotPasswordData({...forgotPasswordData, email: e.target.value})}
+                    placeholder="Enter your email address"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">New Password</label>
+                  <Input
+                    type="password"
+                    value={forgotPasswordData.newPassword}
+                    onChange={(e) => setForgotPasswordData({...forgotPasswordData, newPassword: e.target.value})}
+                    placeholder="Enter new password (min 6 characters)"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Confirm New Password</label>
+                  <Input
+                    type="password"
+                    value={forgotPasswordData.confirmPassword}
+                    onChange={(e) => setForgotPasswordData({...forgotPasswordData, confirmPassword: e.target.value})}
+                    placeholder="Confirm new password"
+                  />
+                </div>
+                
+                <div className="flex gap-2 pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCloseForgotPassword}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleForgotPasswordSendOTP}
+                    disabled={forgotPasswordLoading}
+                    className="flex-1"
+                  >
+                    {forgotPasswordLoading ? 'Sending...' : 'Send OTP'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              // Step 2: Enter OTP
+              <>
+                <div className="text-center space-y-2">
+                  <Mail className="w-12 h-12 mx-auto text-blue-500" />
+                  <h3 className="font-medium">OTP Verification</h3>
+                  <p className="text-sm text-gray-600">
+                    We've sent a password reset OTP to your email address. Please check your inbox.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Enter OTP</label>
+                  <Input
+                    type="text"
+                    value={forgotPasswordData.otp}
+                    onChange={(e) => setForgotPasswordData({...forgotPasswordData, otp: e.target.value})}
+                    placeholder="Enter 6-digit OTP"
+                    maxLength={6}
+                    className="text-center text-lg tracking-widest"
+                  />
+                </div>
+                
+                <div className="flex gap-2 pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setForgotPasswordStep(1)}
+                    className="flex-1"
+                  >
+                    Back
+                  </Button>
+                  <Button 
+                    onClick={handleForgotPasswordReset}
+                    disabled={forgotPasswordLoading}
+                    className="flex-1"
+                  >
+                    {forgotPasswordLoading ? 'Resetting...' : 'Reset Password'}
+                  </Button>
+                </div>
+                
+                <div className="text-center">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={handleForgotPasswordSendOTP}
+                    disabled={forgotPasswordLoading}
+                    className="text-blue-600"
+                  >
+                    Didn't receive? Resend OTP
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }
