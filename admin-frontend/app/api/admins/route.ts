@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
         updated_at: new Date()
       }
       await db.collection('admins').insertOne(defaultAdmin)
-      admins = [defaultAdmin]
+      // Fetch the newly created admin with _id
+      admins = await db.collection('admins').find({}).toArray()
     }
 
     return NextResponse.json({ success: true, data: admins })

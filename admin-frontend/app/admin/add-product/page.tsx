@@ -15,10 +15,14 @@ interface Product {
   productId?: string
   name: string
   price: number
+  coins?: number
   description: string
   image: string
+  images?: string[]
   category?: string
   sizes?: string[]
+  available?: boolean
+  codAvailable?: boolean
   created_at: Date
 }
 

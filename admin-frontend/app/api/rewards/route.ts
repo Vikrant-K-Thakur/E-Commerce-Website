@@ -11,9 +11,7 @@ const client = new MongoClient(process.env.DATABASE_URL!, {
 
 async function connectDB() {
   try {
-    if (!client.topology || !client.topology.isConnected()) {
-      await client.connect()
-    }
+    await client.connect()
     return client.db('ecommerce')
   } catch (error) {
     console.error('MongoDB connection failed:', error)
@@ -146,7 +144,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Invalid action' })
   } catch (error) {
     console.error('API Error:', error)
-    return NextResponse.json({ success: false, error: 'Operation failed: ' + error.message })
+    return NextResponse.json({ success: false, error: 'Operation failed: ' + (error instanceof Error ? error.message : 'Unknown error') })
   }
 }
 
@@ -177,6 +175,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: rewards })
   } catch (error) {
     console.error('API Error:', error)
-    return NextResponse.json({ success: false, error: 'Operation failed: ' + error.message })
+    return NextResponse.json({ success: false, error: 'Operation failed: ' + (error instanceof Error ? error.message : 'Unknown error') })
   }
 }

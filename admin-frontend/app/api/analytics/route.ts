@@ -103,10 +103,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Customer segmentation based on order history
-    const customerOrderCounts = {}
+    const customerOrderCounts: { [key: string]: number } = {}
     deliveredOrders.forEach(order => {
       const email = order.customerEmail || order.customer_email
-      customerOrderCounts[email] = (customerOrderCounts[email] || 0) + 1
+      if (email) {
+        customerOrderCounts[email] = (customerOrderCounts[email] || 0) + 1
+      }
     })
     
     const newCustomers = Object.values(customerOrderCounts).filter(count => count === 1).length
@@ -121,7 +123,7 @@ export async function GET(request: NextRequest) {
     ]
 
     // Product performance based on actual order items
-    const categoryStats = {}
+    const categoryStats: { [key: string]: { sales: number; units: number } } = {}
     deliveredOrders.forEach(order => {
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach(item => {
@@ -168,7 +170,7 @@ export async function GET(request: NextRequest) {
     ]
 
     // Top products based on actual order data
-    const productStats = {}
+    const productStats: { [key: string]: { revenue: number; units: number } } = {}
     deliveredOrders.forEach(order => {
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach(item => {
