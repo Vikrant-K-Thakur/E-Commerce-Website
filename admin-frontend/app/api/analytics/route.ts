@@ -1,5 +1,9 @@
+//route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { MongoClient } from 'mongodb'
+
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
 
 const client = new MongoClient(process.env.DATABASE_URL!, {
   tls: true,
@@ -26,8 +30,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database connection failed' })
     }
 
-    const { searchParams } = new URL(request.url)
-    const timeRange = searchParams.get('timeRange') || '7d'
+    // Get search parameters from the request
+    const timeRange = request.nextUrl.searchParams.get('timeRange') || '7d'
 
     // Calculate date range
     const now = new Date()
