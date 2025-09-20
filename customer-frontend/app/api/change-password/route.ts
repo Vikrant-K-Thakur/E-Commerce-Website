@@ -88,10 +88,11 @@ async function sendOTPEmail(email: string, otp: string, isReset: boolean = false
     console.log(`OTP email sent successfully to ${email}`, result.messageId)
     return true
   } catch (error) {
-    console.error('Failed to send OTP email:', error)
-    console.error('Error details:', error.message)
-    return false
-  }
+  console.error('Failed to send OTP email:', error)
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+  console.error('Error details:', errorMessage)
+  return false
+}
 }
 
 export async function POST(request: NextRequest) {
