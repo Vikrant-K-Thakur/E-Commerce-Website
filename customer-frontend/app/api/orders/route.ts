@@ -41,9 +41,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: orders })
   } catch (error) {
-    console.error('API Error:', error)
-    return NextResponse.json({ success: false, error: 'Operation failed: ' + error.message })
-  }
+  console.error('API Error:', error)
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+  return NextResponse.json({ success: false, error: 'Operation failed: ' + errorMessage })
+}
 }
 
 export async function POST(request: NextRequest) {
@@ -100,6 +101,9 @@ export async function POST(request: NextRequest) {
       const orderDetails = await db.collection('orders').findOne({ orderId, customerEmail: email })
       
       // Note: Refund will be processed separately, no immediate wallet credit
+      if (!orderDetails) {
+        return NextResponse.json({ success: false, error: 'Updated order not found' })
+      }
 
       // Create refund processing record only if payment method is not COD
       if (orderDetails?.paymentMethod !== 'cod') {
@@ -121,9 +125,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Create notification for customer
-      const refundMessage = orderDetails?.paymentMethod === 'cod'
-        ? `Your order ${orderId} has been cancelled.`
-        : `Your order ${orderId} has been cancelled. Refund of ₹${refundAmount} will be processed within 1-2 business days.`
+      // Create notification for customer
+const refundMessage = orderDetails.paymentMethod === 'cod'
+  ? `Your order ${orderId} has been cancelled.`
+  : `Your order ${orderId} has been cancelled. Refund of ₹${refundAmount} will be processed within 1-2 business days.`
       
       const notification = {
         customerEmail: email,
@@ -267,7 +272,8 @@ export async function POST(request: NextRequest) {
       orderId: newOrderId
     })
   } catch (error) {
-    console.error('API Error:', error)
-    return NextResponse.json({ success: false, error: 'Operation failed: ' + error.message })
-  }
+  console.error('API Error:', error)
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+  return NextResponse.json({ success: false, error: 'Operation failed: ' + errorMessage })
+}
 }
