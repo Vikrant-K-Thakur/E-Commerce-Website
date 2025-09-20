@@ -248,7 +248,7 @@ export default function CartPage() {
 
       // Razorpay checkout options
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_1234567890',
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         amount: total * 100,
         currency: 'INR',
         name: 'Your E-Commerce Store',

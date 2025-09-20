@@ -12,9 +12,7 @@ const client = new MongoClient(process.env.DATABASE_URL!, {
 
 async function connectDB() {
   try {
-    if (!client.topology || !client.topology.isConnected()) {
-      await client.connect()
-    }
+    await client.connect()
     return client.db('ecommerce')
   } catch (error) {
     console.error('MongoDB connection failed:', error)
@@ -106,7 +104,7 @@ export async function POST(request: NextRequest) {
     console.error('Payment verification failed:', error)
     return NextResponse.json({ 
       success: false, 
-      error: 'Payment verification failed: ' + error.message 
+      error: 'Payment verification failed: ' + (error instanceof Error ? error.message : 'Unknown error') 
     })
   }
 }

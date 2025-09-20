@@ -322,7 +322,7 @@ export default function HomePage() {
                  selectedCategory === 'oversized' ? 'Oversized Tshirt' :
                  selectedCategory === 'polo' ? 'Polo T Shirts' :
                  selectedCategory === 'premium' ? 'Premium Collection' :
-                 selectedCategory?.charAt(0).toUpperCase() + selectedCategory?.slice(1)} Products
+                 selectedCategory ? selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1) : 'Unknown'} Products
               </h2>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">

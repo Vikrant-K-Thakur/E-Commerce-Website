@@ -167,7 +167,7 @@ export default function AddFundsPage() {
       setIsProcessing(false)
       toast({
         title: "Payment Failed",
-        description: error.message || "Failed to process payment. Please try again.",
+        description: (error instanceof Error ? error.message : "Unknown error") || "Failed to process payment. Please try again.",
         variant: "destructive"
       })
     }

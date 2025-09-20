@@ -124,8 +124,7 @@ export default function HomePage() {
         productId: product.productId,
         name: product.name,
         price: product.price,
-        image: product.image,
-        quantity: 1
+        image: product.image
       })
     }
   }
@@ -291,7 +290,7 @@ export default function HomePage() {
           <section className="px-4 py-6 lg:px-8">
             <div className="mb-4">
               <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground mb-2">
-                {selectedCategory?.charAt(0).toUpperCase() + selectedCategory?.slice(1)} Shirts
+                {selectedCategory ? selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1) : 'Unknown'} Shirts
               </h2>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">

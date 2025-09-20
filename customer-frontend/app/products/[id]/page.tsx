@@ -24,6 +24,7 @@ interface Product {
   category?: string
   sizes?: any[]
   coins?: number
+  codAvailable?: boolean
 }
 
 const sizeGuide = {
@@ -388,7 +389,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             variant="outline" 
             className="flex-1 h-14 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold transition-all"
             onClick={handleAddToCart}
-            disabled={product?.sizes?.length > 0 && !selectedSize}
+            disabled={(product?.sizes?.length ?? 0) > 0 && !selectedSize}
           >
             Add to Cart
           </Button>

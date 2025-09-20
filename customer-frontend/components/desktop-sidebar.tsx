@@ -24,7 +24,7 @@ const baseUserNavigation = [
   { name: "Profile", href: "/profile", icon: User },
   { name: "Rewards", href: "/rewards", icon: Star },
   { name: "Notifications", href: "/notifications", icon: Bell, type: "notifications" },
-]
+] as Array<{ name: string; href: string; icon: any; type?: string; badge?: string }>
 
 export function DesktopSidebar() {
   const pathname = usePathname()

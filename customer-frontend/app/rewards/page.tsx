@@ -152,7 +152,7 @@ export default function RewardsPage() {
     } catch (error) {
       console.error('Failed to redeem code:', error)
       setPopupType('error')
-      setPopupMessage(`Network error: ${error.message || 'Failed to redeem code'}`)
+      setPopupMessage(`Network error: ${(error instanceof Error ? error.message : 'Unknown error') || 'Failed to redeem code'}`)
       setShowPopup(true)
       
       // Auto hide popup after 3 seconds

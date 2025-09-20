@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     console.error('Razorpay order creation failed:', error)
     return NextResponse.json({ 
       success: false, 
-      error: 'Failed to create order: ' + error.message 
+      error: 'Failed to create order: ' + (error instanceof Error ? error.message : 'Unknown error') 
     })
   }
 }

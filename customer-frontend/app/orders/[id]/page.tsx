@@ -6,8 +6,42 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 
+// Type definitions
+interface OrderItem {
+  id: string
+  name: string
+  quantity: number
+  price: number
+  image?: string
+}
+
+interface TimelineStep {
+  status: string
+  completed: boolean
+  date: string
+  time: string
+  description: string
+}
+
+interface OrderData {
+  id: string
+  date: string
+  estimatedDelivery: string
+  status: string
+  trackingNumber: string
+  carrier: string
+  total: number
+  items: OrderItem[]
+  shippingAddress: {
+    name: string
+    address: string
+    phone: string
+  }
+  timeline: TimelineStep[]
+}
+
 // Empty order data - will be fetched from API
-const orderData = {
+const orderData: OrderData = {
   id: "",
   date: "",
   estimatedDelivery: "",
