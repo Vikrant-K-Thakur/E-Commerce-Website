@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       }
       
       await db.collection('customers').insertOne(newUser)
-      existingUser = newUser
+      existingUser = await db.collection('customers').findOne({ email: userData.email })
     } else {
       // Update existing user with Google info if needed
       await db.collection('customers').updateOne(
@@ -96,6 +96,10 @@ export async function POST(request: NextRequest) {
           }
         }
       )
+    }
+
+    if (!existingUser) {
+      return NextResponse.json({ success: false, error: 'Failed to create or retrieve user' })
     }
 
     const user = {
