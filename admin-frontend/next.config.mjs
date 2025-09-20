@@ -11,6 +11,11 @@ const nextConfig = {
     }
     return config
   },
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
+  // Add this to help with deployment
+  output: 'standalone',
 }
 
 export default nextConfig
