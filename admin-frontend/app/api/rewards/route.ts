@@ -66,8 +66,10 @@ export async function POST(request: NextRequest) {
         // Insert rewards
         await db.collection('rewards').insertMany(rewards)
         
-        // If coins, update all customer wallets and create transactions
+        // If coins, update all customer wallets and create transactions with 15-day expiration
         if (data.type === 'coins') {
+          const expirationDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) // 15 days from now
+          
           for (const customer of customers) {
             // Update wallet
             await db.collection('customers').updateOne(
@@ -79,7 +81,7 @@ export async function POST(request: NextRequest) {
               { upsert: true }
             )
             
-            // Create transaction
+            // Create transaction with expiration
             const transaction = {
               id: new Date().getTime().toString() + Math.random().toString(36).substr(2, 9),
               email: customer.email,
@@ -89,6 +91,7 @@ export async function POST(request: NextRequest) {
               coins: parseFloat(data.value),
               paymentMethod: 'admin_reward',
               status: 'completed',
+              expires_at: expirationDate,
               created_at: new Date(),
               date: new Date().toISOString().split('T')[0],
               time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
@@ -105,8 +108,10 @@ export async function POST(request: NextRequest) {
         // Send to specific customer
         await db.collection('rewards').insertOne(reward)
         
-        // If coins, update customer wallet and create transaction
+        // If coins, update customer wallet and create transaction with 15-day expiration
         if (data.type === 'coins') {
+          const expirationDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) // 15 days from now
+          
           // Update wallet
           await db.collection('customers').updateOne(
             { email: data.customerEmail },
@@ -117,7 +122,7 @@ export async function POST(request: NextRequest) {
             { upsert: true }
           )
           
-          // Create transaction
+          // Create transaction with expiration
           const transaction = {
             id: new Date().getTime().toString(),
             email: data.customerEmail,
@@ -127,6 +132,7 @@ export async function POST(request: NextRequest) {
             coins: parseFloat(data.value),
             paymentMethod: 'admin_reward',
             status: 'completed',
+            expires_at: expirationDate,
             created_at: new Date(),
             date: new Date().toISOString().split('T')[0],
             time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })

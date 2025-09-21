@@ -56,6 +56,8 @@ export default function RedeemCodesPage() {
   const [codeDescription, setCodeDescription] = useState("")
   const [validityDays, setValidityDays] = useState("30")
   const [usageLimit, setUsageLimit] = useState("100")
+  const [customCode, setCustomCode] = useState("")
+  const [useCustomCode, setUseCustomCode] = useState(false)
 
   const itemsPerPage = 8
 
@@ -96,7 +98,13 @@ export default function RedeemCodesPage() {
     setCreating(true)
 
     try {
-      const code = generateRandomCode()
+      const code = useCustomCode ? customCode.toUpperCase().trim() : generateRandomCode()
+      
+      if (useCustomCode && !customCode.trim()) {
+        alert('Please enter a custom code or use auto-generated code')
+        return
+      }
+      
       const response = await fetch('/api/redeem-codes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,6 +145,8 @@ export default function RedeemCodesPage() {
     setCodeDescription("")
     setValidityDays("30")
     setUsageLimit("100")
+    setCustomCode("")
+    setUseCustomCode(false)
   }
 
   const copyToClipboard = (code: string) => {
@@ -300,6 +310,42 @@ export default function RedeemCodesPage() {
                         <SelectItem value="coins">Gift Coins</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="useCustomCode"
+                        checked={useCustomCode}
+                        onChange={(e) => setUseCustomCode(e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor="useCustomCode" className="text-sm font-medium">
+                        Set Custom Redeem Code
+                      </Label>
+                    </div>
+                    
+                    {useCustomCode ? (
+                      <div>
+                        <Label>Custom Code</Label>
+                        <Input
+                          value={customCode}
+                          onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
+                          placeholder="Enter custom code (e.g., SAVE20)"
+                          maxLength={20}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Code will be automatically converted to uppercase. Max 20 characters.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm text-gray-600">
+                          🎲 Auto-generated code will be created (8 characters)
+                        </p>
+                      </div>
+                    )}
                   </div>
                   
                   <div>

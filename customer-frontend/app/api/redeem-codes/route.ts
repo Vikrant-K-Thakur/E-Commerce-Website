@@ -111,7 +111,8 @@ export async function POST(request: NextRequest) {
           { upsert: true }
         )
 
-        // Create transaction record
+        // Create transaction record with 15-day expiration
+        const expirationDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) // 15 days from now
         const transaction = {
           id: new Date().getTime().toString(),
           email,
@@ -121,6 +122,7 @@ export async function POST(request: NextRequest) {
           coins: redeemCode.value,
           paymentMethod: 'redeem_code',
           status: 'completed',
+          expires_at: expirationDate,
           created_at: new Date(),
           date: new Date().toISOString().split('T')[0],
           time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })

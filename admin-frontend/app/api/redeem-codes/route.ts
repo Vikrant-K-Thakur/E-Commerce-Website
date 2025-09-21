@@ -35,9 +35,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'create') {
+      // Check if code already exists
+      const existingCode = await db.collection('redeem_codes').findOne({ code: data.code.toUpperCase() })
+      if (existingCode) {
+        return NextResponse.json({ 
+          success: false, 
+          error: `Code "${data.code}" already exists. Please choose a different code.` 
+        })
+      }
+      
       const redeemCode = {
         id: new Date().getTime().toString(),
-        code: data.code,
+        code: data.code.toUpperCase(),
         type: data.type,
         value: parseFloat(data.value),
         title: data.title,

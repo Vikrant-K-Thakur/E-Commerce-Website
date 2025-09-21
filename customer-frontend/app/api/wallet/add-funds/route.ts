@@ -95,11 +95,29 @@ export async function GET(request: NextRequest) {
       .sort({ created_at: -1 })
       .toArray()
 
+    // Get expiring coins
+    const now = new Date()
+    const expiringTransactions = await db.collection('transactions').find({
+      email,
+      type: 'credit',
+      coins: { $gt: 0 },
+      expires_at: { $exists: true, $gte: now },
+      expired_processed: { $ne: true }
+    }).sort({ expires_at: 1 }).toArray()
+
+    const expiringCoins = expiringTransactions.map(t => ({
+      coins: t.coins,
+      description: t.description,
+      expires_at: t.expires_at,
+      daysLeft: Math.ceil((new Date(t.expires_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    }))
+
     return NextResponse.json({ 
       success: true, 
       data: {
         coinBalance,
-        transactions
+        transactions,
+        expiringCoins
       }
     })
   } catch (error) {

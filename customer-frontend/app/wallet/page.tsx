@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/auth-context"
 export default function WalletPage() {
   const [coinBalance, setCoinBalance] = useState(0)
   const [transactions, setTransactions] = useState<any[]>([])
+  const [expiringCoins, setExpiringCoins] = useState<any[]>([])
   const [walletLoading, setWalletLoading] = useState(true)
   const { user } = useAuth()
 
@@ -39,6 +40,7 @@ export default function WalletPage() {
       if (result.success) {
         setCoinBalance(result.data.coinBalance || 0)
         setTransactions(result.data.transactions || [])
+        setExpiringCoins(result.data.expiringCoins || [])
       }
     } catch (error) {
       console.error('Failed to fetch wallet data:', error)
@@ -77,7 +79,49 @@ export default function WalletPage() {
           </CardContent>
         </Card>
 
+        {/* Expiring Coins Warning */}
+        {expiringCoins.length > 0 && (
+          <Card className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2 text-orange-800">
+                <Clock className="w-4 h-4" />
+                Coins Expiring Soon
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-orange-700 mb-3">
+                ⚠️ These coins will expire in 15 days from when you received them. Use them before they expire!
+              </p>
+              {expiringCoins.slice(0, 3).map((expiring, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-white/50 rounded-lg border border-orange-100">
+                  <div className="space-y-1">
+                    <p className="font-medium text-sm text-orange-900">{expiring.description}</p>
+                    <p className="text-xs text-orange-600">
+                      Expires in {expiring.daysLeft} day{expiring.daysLeft !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-orange-800">{expiring.coins} Coins</p>
+                  </div>
+                </div>
+              ))}
+              {expiringCoins.length > 3 && (
+                <p className="text-xs text-orange-600 text-center">
+                  +{expiringCoins.length - 3} more expiring coins
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
+
+
+        {/* Add Funds Button */}
+        <Link href="/wallet/add-funds">
+          <Button className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold">
+            Add Funds to Wallet
+          </Button>
+        </Link>
 
         {/* All Transactions */}
         <Card>
@@ -92,10 +136,13 @@ export default function WalletPage() {
                     <div className="flex items-center gap-3">
                       <div
                         className={`p-2 rounded-full ${
+                          transaction.paymentMethod === 'expiration' ? "bg-orange-100 text-orange-600" :
                           transaction.type === "credit" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
                         }`}
                       >
-                        {transaction.type === "credit" ? (
+                        {transaction.paymentMethod === 'expiration' ? (
+                          <Clock className="w-4 h-4" />
+                        ) : transaction.type === "credit" ? (
                           <TrendingUp className="w-4 h-4" />
                         ) : (
                           <TrendingDown className="w-4 h-4" />
@@ -116,9 +163,16 @@ export default function WalletPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-semibold ${transaction.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                        {transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} Coins
+                      <p className={`font-semibold ${
+                        transaction.paymentMethod === 'expiration' ? "text-orange-600" :
+                        transaction.type === "credit" ? "text-green-600" : "text-red-600"
+                      }`}>
+                        {transaction.paymentMethod === 'expiration' ? "-" : 
+                         transaction.type === "credit" ? "+" : ""}{Math.abs(transaction.coins || 0)} Coins
                       </p>
+                      {transaction.paymentMethod === 'expiration' && (
+                        <p className="text-xs text-orange-500">Expired</p>
+                      )}
                     </div>
                   </div>
                 ))
