@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const email = searchParams.get('email')
+    const type = searchParams.get('type') // 'coupons' for cart page filtering
     
     if (!email) {
       return NextResponse.json({ success: false, error: 'Email required' })
@@ -33,7 +34,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database connection failed' })
     }
 
-    const rewards = await db.collection('rewards').find({ customerEmail: email }).sort({ created_at: -1 }).toArray()
+    let query: any = { customerEmail: email }
+    
+    // If requesting coupons for cart page, filter out only used ones
+    if (type === 'coupons') {
+      query = {
+        customerEmail: email,
+        type: 'discount',
+        $or: [
+          { isUsed: { $ne: true } },
+          { isUsed: { $exists: false } }
+        ]
+      }
+    }
+
+    const rewards = await db.collection('rewards').find(query).sort({ created_at: -1 }).toArray()
     return NextResponse.json({ success: true, data: rewards })
   } catch (error) {
     console.error('API Error:', error)

@@ -65,8 +65,10 @@ export async function POST(request: NextRequest) {
 
     // Check if user exists in database
     let existingUser = await db.collection('customers').findOne({ email: userData.email })
+    let isNewUser = false
     
     if (!existingUser) {
+      isNewUser = true
       // Create new user
       const newUser = {
         id: Date.now().toString(),
@@ -77,12 +79,50 @@ export async function POST(request: NextRequest) {
         avatar: userData.picture,
         provider: 'google',
         googleId: userData.id,
-        coinBalance: 0,
+        coinBalance: 50, // Start with login bonus
+        loginBonusGiven: true,
         created_at: new Date(),
         updated_at: new Date()
       }
       
       await db.collection('customers').insertOne(newUser)
+      
+      // Create login bonus transaction with 15-day expiration
+      const expirationDate = new Date()
+      expirationDate.setDate(expirationDate.getDate() + 15)
+      
+      const bonusTransaction = {
+        id: new Date().getTime().toString() + Math.random().toString(36).substr(2, 9),
+        email: userData.email,
+        type: 'credit',
+        description: 'Welcome Bonus - First Login',
+        amount: 0,
+        coins: 50,
+        paymentMethod: 'login_bonus',
+        status: 'completed',
+        expires_at: expirationDate,
+        created_at: new Date(),
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      }
+      
+      await db.collection('transactions').insertOne(bonusTransaction)
+      
+      // Create reward notification for the bonus
+      const rewardNotification = {
+        id: new Date().getTime().toString() + Math.random().toString(36).substr(2, 9),
+        customerEmail: userData.email,
+        type: 'coins',
+        title: 'Welcome Bonus!',
+        description: 'Congratulations! You received 50 coins as a welcome bonus for joining NXTFIT. Use them for discounts on your purchases!',
+        value: 50,
+        expires_at: expirationDate,
+        isRead: false,
+        created_at: new Date()
+      }
+      
+      await db.collection('rewards').insertOne(rewardNotification)
+      
       existingUser = await db.collection('customers').findOne({ email: userData.email })
     } else {
       // Update existing user with Google info if needed
@@ -113,7 +153,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      user
+      user,
+      isNewUser
     })
   } catch (error) {
     console.error('Google auth error:', error)

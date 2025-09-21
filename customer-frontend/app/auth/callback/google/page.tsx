@@ -41,6 +41,13 @@ export default function GoogleCallback() {
           setStatus("Login successful! Redirecting...")
           localStorage.setItem('nxtfit_user', JSON.stringify(result.user))
           
+          // Show welcome bonus notification for new users
+          if (result.isNewUser) {
+            setTimeout(() => {
+              alert('🎉 Welcome to NXTFIT! You received 50 coins as a welcome bonus that expire in 15 days. Check your rewards!')
+            }, 1500)
+          }
+          
           // Trigger auth context update
           window.dispatchEvent(new Event('storage'))
           

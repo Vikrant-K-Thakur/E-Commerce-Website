@@ -63,7 +63,8 @@ export default function CartPage() {
       // Only clear if there's an applied coupon that wasn't used in a successful order
       if (appliedCoupon && user?.email) {
         const currentUsedCoupons = JSON.parse(localStorage.getItem(`usedCoupons_${user.email}`) || '[]')
-        const updatedUsedCoupons = currentUsedCoupons.filter((id: string) => id !== appliedCoupon._id)
+        const couponId = appliedCoupon._id || appliedCoupon.id
+        const updatedUsedCoupons = currentUsedCoupons.filter((id: string) => id !== couponId)
         if (updatedUsedCoupons.length !== currentUsedCoupons.length) {
           localStorage.setItem(`usedCoupons_${user.email}`, JSON.stringify(updatedUsedCoupons))
         }
@@ -93,16 +94,15 @@ export default function CartPage() {
 
   const fetchAvailableCoupons = async () => {
     try {
-      const response = await fetch(`/api/rewards?email=${user?.email}`)
+      const response = await fetch(`/api/rewards?email=${user?.email}&type=coupons`)
       const data = await response.json()
       if (data.success) {
-        const validCoupons = data.data.filter((reward: any) => 
-          reward.type === 'discount' && 
-          !reward.isUsed && // Never show used coupons from database
-          !sessionUsedCoupons.includes(reward._id) && // Never show session used coupons
-          new Date(reward.expiresAt) > new Date() &&
-          (!appliedCoupon || reward._id !== appliedCoupon._id) // Exclude currently applied coupon
-        )
+        const validCoupons = data.data.filter((reward: any) => {
+          const rewardId = reward._id || reward.id
+          const appliedId = appliedCoupon?._id || appliedCoupon?.id
+          return !sessionUsedCoupons.includes(rewardId) && // Never show session used coupons
+                 (!appliedCoupon || rewardId !== appliedId) // Exclude currently applied coupon
+        })
         setAvailableCoupons(validCoupons)
       }
     } catch (error) {
@@ -192,7 +192,8 @@ export default function CartPage() {
     if (confirmed) {
       setAppliedCoupon(coupon)
       // Mark coupon as used in session to prevent reuse even after refresh
-      const updatedUsedCoupons = [...sessionUsedCoupons, coupon._id]
+      const couponId = coupon._id || coupon.id
+      const updatedUsedCoupons = [...sessionUsedCoupons, couponId]
       saveSessionUsedCoupons(updatedUsedCoupons)
     }
   }
@@ -200,7 +201,8 @@ export default function CartPage() {
   const removeCoupon = () => {
     if (appliedCoupon) {
       // Remove from session used coupons since user is removing it before placing order
-      const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== appliedCoupon._id)
+      const couponId = appliedCoupon._id || appliedCoupon.id
+      const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== couponId)
       saveSessionUsedCoupons(updatedUsedCoupons)
     }
     setAppliedCoupon(null)
@@ -274,7 +276,7 @@ export default function CartPage() {
                 totalAmount: total,
                 discountAmount: discount > 0 ? discount : undefined,
                 coinsUsed: coinsDiscount > 0 ? coinsDiscount : undefined,
-                couponId: appliedCoupon?._id,
+                couponId: appliedCoupon?._id || appliedCoupon?.id,
                 paymentMethod: 'online',
                 pickupPoint: selectedPickupPoint,
                 razorpay_order_id: response.razorpay_order_id,
@@ -294,8 +296,9 @@ export default function CartPage() {
                 try {
                   const key = `usedCoupons_${user.email}`
                   const stored = JSON.parse(localStorage.getItem(key) || '[]')
-                  if (!stored.includes(appliedCoupon._id)) {
-                    const updated = [...stored, appliedCoupon._id]
+                  const couponId = appliedCoupon._id || appliedCoupon.id
+                  if (!stored.includes(couponId)) {
+                    const updated = [...stored, couponId]
                     localStorage.setItem(key, JSON.stringify(updated))
                     setSessionUsedCoupons(updated)
                   }
@@ -315,7 +318,8 @@ export default function CartPage() {
             alert('Order placement failed. Please contact support if payment was deducted.')
             // On payment failure, remove the coupon from session used list since order failed
             if (appliedCoupon) {
-              const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== appliedCoupon._id)
+              const couponId = appliedCoupon._id || appliedCoupon.id
+              const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== couponId)
               saveSessionUsedCoupons(updatedUsedCoupons)
             }
           }
@@ -339,7 +343,8 @@ export default function CartPage() {
       alert('Payment failed. Please try again.')
       // On payment failure, remove the coupon from session used list since order failed
       if (appliedCoupon) {
-        const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== appliedCoupon._id)
+        const couponId = appliedCoupon._id || appliedCoupon.id
+        const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== couponId)
         saveSessionUsedCoupons(updatedUsedCoupons)
       }
       setIsPlacingOrder(false)
@@ -402,8 +407,9 @@ export default function CartPage() {
           try {
             const key = `usedCoupons_${user.email}`
             const stored = JSON.parse(localStorage.getItem(key) || '[]')
-            if (!stored.includes(appliedCoupon._id)) {
-              const updated = [...stored, appliedCoupon._id]
+            const couponId = appliedCoupon._id || appliedCoupon.id
+            if (!stored.includes(couponId)) {
+              const updated = [...stored, couponId]
               localStorage.setItem(key, JSON.stringify(updated))
               setSessionUsedCoupons(updated)
             }
@@ -420,7 +426,8 @@ export default function CartPage() {
         alert('Failed to place order: ' + data.error)
         // On order failure, remove the coupon from session used list since order failed
         if (appliedCoupon) {
-          const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== appliedCoupon._id)
+          const couponId = appliedCoupon._id || appliedCoupon.id
+          const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== couponId)
           saveSessionUsedCoupons(updatedUsedCoupons)
         }
       }
@@ -428,7 +435,8 @@ export default function CartPage() {
       alert('Failed to place order. Please try again.')
       // On order failure, remove the coupon from session used list since order failed
       if (appliedCoupon) {
-        const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== appliedCoupon._id)
+        const couponId = appliedCoupon._id || appliedCoupon.id
+        const updatedUsedCoupons = sessionUsedCoupons.filter(id => id !== couponId)
         saveSessionUsedCoupons(updatedUsedCoupons)
       }
     } finally {

@@ -253,17 +253,23 @@ const refundMessage = orderDetails.paymentMethod === 'cod'
 
     // Mark coupon as used if applied (PERMANENT - never restored even on cancellation)
     if (couponId) {
-      await db.collection('rewards').updateOne(
-        { _id: couponId, customerEmail: email },
-        { 
-          $set: { 
-            isUsed: true,
-            usedAt: new Date(),
-            usedOrderId: newOrderId,
-            updated_at: new Date()
+      try {
+        const { ObjectId } = require('mongodb')
+        await db.collection('rewards').updateOne(
+          { _id: new ObjectId(couponId), customerEmail: email },
+          { 
+            $set: { 
+              isUsed: true,
+              usedAt: new Date(),
+              usedOrderId: newOrderId,
+              updated_at: new Date()
+            }
           }
-        }
-      )
+        )
+      } catch (error) {
+        console.error('Failed to mark coupon as used:', error)
+        // Continue with order creation even if coupon marking fails
+      }
     }
 
     return NextResponse.json({ 

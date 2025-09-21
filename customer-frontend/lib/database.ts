@@ -6,6 +6,8 @@ export interface Customer {
   address?: string
   password?: string
   cartItems?: any[]
+  coinBalance?: number
+  loginBonusGiven?: boolean
   created_at: Date
   updated_at: Date
 }
