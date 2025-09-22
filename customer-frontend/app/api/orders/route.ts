@@ -203,31 +203,44 @@ const refundMessage = orderDetails.paymentMethod === 'cod'
 
     // Handle coins discount (deduct coins used for discount from wallet)
     if (coinsUsed > 0) {
-      await db.collection('customers').updateOne(
-        { email },
-        { 
-          $inc: { coinBalance: -coinsUsed },
-          $set: { updated_at: new Date() }
-        }
-      )
-      
-      // Create transaction record for coins usage
-      const coinsTransaction = {
-        id: new Date().getTime().toString() + '_coins',
-        email,
-        type: 'debit',
-        description: `Coins Discount Applied - ${newOrderId}`,
-        amount: coinsUsed,
-        coins: -coinsUsed,
-        paymentMethod: 'coins',
-        status: 'completed',
-        orderId: newOrderId,
-        created_at: new Date(),
-        date: new Date().toISOString().split('T')[0],
-        time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+      // Validate coins usage against product limits and available balance
+      let totalValidCoinsUsed = 0
+      for (const item of items) {
+        const maxCoinsPerItem = (item.coins || 0) * item.quantity
+        const availableCoins = Math.min(currentBalance, maxCoinsPerItem)
+        totalValidCoinsUsed += Math.min(availableCoins, maxCoinsPerItem)
       }
       
-      await db.collection('transactions').insertOne(coinsTransaction)
+      // Use the minimum of requested coins and validated coins
+      const actualCoinsUsed = Math.min(coinsUsed, totalValidCoinsUsed, currentBalance)
+      
+      if (actualCoinsUsed > 0) {
+        await db.collection('customers').updateOne(
+          { email },
+          { 
+            $inc: { coinBalance: -actualCoinsUsed },
+            $set: { updated_at: new Date() }
+          }
+        )
+        
+        // Create transaction record for coins usage
+        const coinsTransaction = {
+          id: new Date().getTime().toString() + '_coins',
+          email,
+          type: 'debit',
+          description: `Coins Discount Applied - ${newOrderId}`,
+          amount: actualCoinsUsed,
+          coins: -actualCoinsUsed,
+          paymentMethod: 'coins',
+          status: 'completed',
+          orderId: newOrderId,
+          created_at: new Date(),
+          date: new Date().toISOString().split('T')[0],
+          time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+        }
+        
+        await db.collection('transactions').insertOne(coinsTransaction)
+      }
     }
 
     // Create payment transaction record

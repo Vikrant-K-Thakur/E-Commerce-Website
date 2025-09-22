@@ -212,7 +212,11 @@ export default function CartPage() {
   const coinsDiscount = Object.keys(usedCoinsPerItem).reduce((total, itemId) => {
     if (usedCoinsPerItem[itemId]) {
       const item = cartItems.find(i => i.id === itemId)
-      return total + ((item?.coins || 0) * (item?.quantity || 1))
+      if (item) {
+        const maxCoinsForItem = (item.coins || 0) * item.quantity
+        const availableCoins = Math.min(walletBalance, maxCoinsForItem)
+        return total + availableCoins
+      }
     }
     return total
   }, 0)
@@ -468,26 +472,30 @@ export default function CartPage() {
             </div>
             
             {/* Coins Discount Summary */}
-            {cartItems.some(item => (item.coins || 0) > 0) && (
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">💰</span>
+            {cartItems.some(item => (item.coins || 0) > 0) && (() => {
+              const totalMaxCoins = cartItems.reduce((total, item) => total + ((item.coins || 0) * item.quantity), 0)
+              const totalAvailableCoins = Math.min(walletBalance, totalMaxCoins)
+              
+              return (
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">💰</span>
+                    </div>
+                    <span className="font-semibold text-yellow-800">Coins Discount Available!</span>
                   </div>
-                  <span className="font-semibold text-yellow-800">Coins Discount Available!</span>
+                  <p className="text-sm text-yellow-700">
+                    Max coins discount: <span className="font-bold">{totalMaxCoins} coins</span> = <span className="font-bold">₹{totalMaxCoins}</span> off
+                  </p>
+                  <p className="text-sm text-yellow-700">
+                    You can use: <span className="font-bold">{totalAvailableCoins} coins</span> = <span className="font-bold">₹{totalAvailableCoins}</span> off
+                  </p>
+                  <p className="text-xs text-yellow-600 mt-1">
+                    💡 Click "Use coins" on individual items below to apply discounts
+                  </p>
                 </div>
-                <p className="text-sm text-yellow-700">
-                  Total coins discount available: <span className="font-bold">
-                    {cartItems.reduce((total, item) => total + ((item.coins || 0) * item.quantity), 0)} coins
-                  </span> = <span className="font-bold">
-                    ₹{cartItems.reduce((total, item) => total + ((item.coins || 0) * item.quantity), 0)}
-                  </span> off
-                </p>
-                <p className="text-xs text-yellow-600 mt-1">
-                  💡 Click "Use coins" on individual items below to apply discounts
-                </p>
-              </div>
-            )}
+              )
+            })()}
 
             {cartItems.map((item) => (
               <Card key={item.id} className="overflow-hidden">
@@ -513,55 +521,69 @@ export default function CartPage() {
                               </Badge>
                             )}
                           </div>
-                          {(item.coins || 0) > 0 && (
-                            <div className="bg-gradient-to-r from-blue-50 to-transparent border border-blue-200 rounded-lg p-3 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-xs">₹</span>
-                                </div>
-                                <span className="text-sm font-medium text-blue-800">
-                                  Coins Discount: {(item.coins || 0) * item.quantity} coins = ₹{(item.coins || 0) * item.quantity} off
-                                </span>
-                              </div>
-                              {walletBalance >= ((item.coins || 0) * item.quantity) ? (
+                          {(item.coins || 0) > 0 && (() => {
+                            const maxCoinsPerItem = item.coins || 0
+                            const maxCoinsForQuantity = maxCoinsPerItem * item.quantity
+                            const availableCoins = Math.min(walletBalance, maxCoinsForQuantity)
+                            const canUseCoins = availableCoins > 0
+                            
+                            return (
+                              <div className="bg-gradient-to-r from-blue-50 to-transparent border border-blue-200 rounded-lg p-3 space-y-2">
                                 <div className="flex items-center gap-2">
-                                  {usedCoinsPerItem[item.id] ? (
-                                    <div className="flex items-center justify-between w-full">
-                                      <Badge className="bg-green-100 text-green-700 text-xs px-3 py-1">
-                                        ✓ Applied: -{(item.coins || 0) * item.quantity} coins (₹{(item.coins || 0) * item.quantity})
-                                      </Badge>
+                                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs">₹</span>
+                                  </div>
+                                  <span className="text-sm font-medium text-blue-800">
+                                    Max Coins Discount: {maxCoinsForQuantity} coins = ₹{maxCoinsForQuantity} off
+                                  </span>
+                                </div>
+                                {canUseCoins ? (
+                                  <div className="flex items-center gap-2">
+                                    {usedCoinsPerItem[item.id] ? (
+                                      <div className="flex items-center justify-between w-full">
+                                        <Badge className="bg-green-100 text-green-700 text-xs px-3 py-1">
+                                          ✓ Applied: -{availableCoins} coins (₹{availableCoins})
+                                        </Badge>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 px-2 text-xs text-red-600 hover:bg-red-50"
+                                          onClick={() => setUsedCoinsPerItem(prev => ({...prev, [item.id]: false}))}
+                                        >
+                                          Remove
+                                        </Button>
+                                      </div>
+                                    ) : (
                                       <Button
-                                        variant="ghost"
+                                        variant="outline"
                                         size="sm"
-                                        className="h-6 px-2 text-xs text-red-600 hover:bg-red-50"
-                                        onClick={() => setUsedCoinsPerItem(prev => ({...prev, [item.id]: false}))}
+                                        className="h-8 px-3 text-xs bg-blue-600 text-white border-blue-600 hover:bg-blue-700 font-medium"
+                                        onClick={() => setUsedCoinsPerItem(prev => ({...prev, [item.id]: true}))}
                                       >
-                                        Remove
+                                        💰 Use {availableCoins} coins for ₹{availableCoins} off
                                       </Button>
-                                    </div>
-                                  ) : (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-8 px-3 text-xs bg-blue-600 text-white border-blue-600 hover:bg-blue-700 font-medium"
-                                      onClick={() => setUsedCoinsPerItem(prev => ({...prev, [item.id]: true}))}
-                                    >
-                                      💰 Use {(item.coins || 0) * item.quantity} coins for ₹{(item.coins || 0) * item.quantity} off
-                                    </Button>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="bg-red-50 border border-red-200 rounded p-2">
-                                  <p className="text-xs text-red-700">
-                                    ⚠️ Need {(item.coins || 0) * item.quantity} coins for discount (You have {walletBalance} coins)
-                                  </p>
-                                  <p className="text-xs text-red-600 mt-1">
-                                    Add more coins to your wallet to use this discount
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="bg-red-50 border border-red-200 rounded p-2">
+                                    <p className="text-xs text-red-700">
+                                      ⚠️ Need coins for discount (You have {walletBalance} coins, max allowed: {maxCoinsForQuantity})
+                                    </p>
+                                    <p className="text-xs text-red-600 mt-1">
+                                      Add more coins to your wallet to use this discount
+                                    </p>
+                                  </div>
+                                )}
+                                {walletBalance > maxCoinsForQuantity && (
+                                  <div className="bg-yellow-50 border border-yellow-200 rounded p-2">
+                                    <p className="text-xs text-yellow-700">
+                                      ℹ️ You have {walletBalance} coins, but can only use max {maxCoinsForQuantity} coins on this product
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })()}
                         </div>
                       </div>
 

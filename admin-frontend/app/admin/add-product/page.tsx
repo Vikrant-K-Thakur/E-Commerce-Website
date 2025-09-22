@@ -232,14 +232,14 @@ export default function AddProductPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Coins per order</label>
+                <label className="text-sm font-medium text-gray-600">Max Coins Discount</label>
                 <Input
                   type="number"
                   value={formData.coins}
                   onChange={(e) => setFormData({...formData, coins: e.target.value})}
                   placeholder="0"
                 />
-                <p className="text-xs text-gray-500 mt-1">Coins customers can use to get discount</p>
+                <p className="text-xs text-gray-500 mt-1">Maximum coins customers can use for discount on this product</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Category</label>
@@ -422,7 +422,7 @@ export default function AddProductPage() {
                       <Badge variant="secondary" className="bg-green-100 text-green-800">{product.price} ₹</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="bg-blue-100 text-blue-800">{product.coins || 0} Coins</Badge>
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800">Max {product.coins || 0} Coins</Badge>
                     </TableCell>
                     <TableCell className="text-gray-600">{product.category || 'N/A'}</TableCell>
                     <TableCell>
