@@ -34,6 +34,7 @@ export async function GET() {
       coins: p.coins || 0,
       available: p.available !== false,
       codAvailable: p.codAvailable !== false,
+      images: p.images || [p.image],
       _id: undefined,
     }))
 
@@ -44,30 +45,63 @@ export async function GET() {
   }
 }
 
-// 📌 POST add product
+// 📌 POST add/update product
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     const db = await connectDB()
     if (!db) return NextResponse.json({ success: false, error: 'Database connection failed' })
 
-    const product = {
-      name: data.name,
-      price: data.price,
-      description: data.description,
-      image: data.image,
-      created_at: new Date(),
-      updated_at: new Date(),
+    if (data.action === 'update' && data.id) {
+      // Update existing product
+      const updateData = {
+        productId: data.productId,
+        name: data.name,
+        price: data.price,
+        coins: data.coins || 0,
+        description: data.description,
+        image: data.images?.[0] || data.image,
+        images: data.images || [data.image],
+        category: data.category || '',
+        sizes: data.sizes || [],
+        available: data.available !== false,
+        codAvailable: data.codAvailable !== false,
+        updated_at: new Date(),
+      }
+
+      await db.collection('products').updateOne(
+        { _id: new ObjectId(data.id) },
+        { $set: updateData }
+      )
+
+      return NextResponse.json({ success: true, data: { ...updateData, id: data.id } })
+    } else {
+      // Add new product
+      const product = {
+        productId: data.productId,
+        name: data.name,
+        price: data.price,
+        coins: data.coins || 0,
+        description: data.description,
+        image: data.images?.[0] || data.image,
+        images: data.images || [data.image],
+        category: data.category || '',
+        sizes: data.sizes || [],
+        available: data.available !== false,
+        codAvailable: data.codAvailable !== false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }
+
+      const result = await db.collection('products').insertOne(product)
+
+      return NextResponse.json({
+        success: true,
+        data: { ...product, id: result.insertedId.toString() },
+      })
     }
-
-    const result = await db.collection('products').insertOne(product)
-
-    return NextResponse.json({
-      success: true,
-      data: { ...product, id: result.insertedId.toString() },
-    })
   } catch (error) {
-    console.error('Add product failed:', error)
+    console.error('Product operation failed:', error)
     return NextResponse.json({ success: false, error: 'Operation failed' })
   }
 }

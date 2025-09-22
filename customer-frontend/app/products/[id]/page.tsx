@@ -339,7 +339,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Description</h3>
           <div className="bg-muted/30 p-4 rounded-xl">
-            <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+            <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{product.description}</div>
           </div>
         </div>
 
