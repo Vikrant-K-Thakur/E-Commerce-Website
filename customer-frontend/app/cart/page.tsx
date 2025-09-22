@@ -131,25 +131,24 @@ export default function CartPage() {
             lat: position.coords.latitude,
             lon: position.coords.longitude
           }
-
+          console.log('User location:', location)
           setUserLocation(location)
           fetchPickupPoints(location)
           setLocationLoading(false)
         },
         (error) => {
           console.error('Location access denied:', error)
-          alert('Location access denied. Showing all pickup points without distance calculation.')
           fetchPickupPoints()
           setLocationLoading(false)
         },
         {
-          enableHighAccuracy: false, // Faster, less accurate
-          timeout: 5000, // 5 seconds instead of 10
-          maximumAge: 600000 // 10 minutes cache
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 300000
         }
       )
     } else {
-      alert('Geolocation is not supported by this browser.')
+      console.log('Geolocation not supported')
       fetchPickupPoints()
       setLocationLoading(false)
     }
@@ -158,25 +157,30 @@ export default function CartPage() {
   const fetchPickupPoints = async (location?: {lat: number, lon: number}) => {
     try {
       const params = location ? `?lat=${location.lat}&lon=${location.lon}` : ''
+      console.log('Fetching pickup points with params:', params)
       const response = await fetch(`/api/pickup-points${params}`)
       const data = await response.json()
       
+      console.log('Pickup points response:', data)
+      
       if (data.success) {
-        setPickupPoints(data.data)
+        setPickupPoints(data.data || [])
         setCanDeliver(data.canDeliver !== false)
         setNearestDistance(data.nearestDistance || null)
         
         // Auto-select nearest pickup point if available
-        if (data.data.length > 0 && data.canDeliver !== false) {
+        if (data.data && data.data.length > 0) {
           setSelectedPickupPoint(data.data[0])
         }
       } else {
         console.error('API Error:', data.error)
-        alert('Failed to load pickup points: ' + data.error)
+        setPickupPoints([])
+        setCanDeliver(false)
       }
     } catch (error) {
       console.error('Failed to fetch pickup points:', error)
-      alert('Failed to load pickup points. Please try again.')
+      setPickupPoints([])
+      setCanDeliver(false)
     }
   }
 
@@ -394,7 +398,7 @@ export default function CartPage() {
           totalAmount: total,
           discountAmount: discount > 0 ? discount : undefined,
           coinsUsed: coinsDiscount > 0 ? coinsDiscount : undefined,
-          couponId: appliedCoupon?._id,
+          couponId: appliedCoupon?._id || appliedCoupon?.id,
           paymentMethod: 'cod',
           pickupPoint: selectedPickupPoint
         })

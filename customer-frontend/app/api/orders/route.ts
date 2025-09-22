@@ -204,15 +204,14 @@ const refundMessage = orderDetails.paymentMethod === 'cod'
     // Handle coins discount (deduct coins used for discount from wallet)
     if (coinsUsed > 0) {
       // Validate coins usage against product limits and available balance
-      let totalValidCoinsUsed = 0
+      let totalMaxCoinsAllowed = 0
       for (const item of items) {
         const maxCoinsPerItem = (item.coins || 0) * item.quantity
-        const availableCoins = Math.min(currentBalance, maxCoinsPerItem)
-        totalValidCoinsUsed += Math.min(availableCoins, maxCoinsPerItem)
+        totalMaxCoinsAllowed += maxCoinsPerItem
       }
       
-      // Use the minimum of requested coins and validated coins
-      const actualCoinsUsed = Math.min(coinsUsed, totalValidCoinsUsed, currentBalance)
+      // Use the minimum of requested coins, max allowed coins, and current balance
+      const actualCoinsUsed = Math.min(coinsUsed, totalMaxCoinsAllowed, currentBalance)
       
       if (actualCoinsUsed > 0) {
         await db.collection('customers').updateOne(

@@ -50,20 +50,24 @@ export async function GET(request: NextRequest) {
 
     // Get all active pickup points
     const pickupPoints = await db.collection('pickupPoints')
-      .find({ isActive: true })
+      .find({ $or: [{ isActive: true }, { isActive: { $exists: false } }] })
       .sort({ created_at: -1 })
       .toArray()
     
+    console.log(`Found ${pickupPoints.length} pickup points in database`)
+    
     let transformedPoints = pickupPoints.map(point => ({
       id: point._id.toString(),
-      name: point.name,
-      address: point.address,
-      latitude: point.latitude,
-      longitude: point.longitude,
-      contactPhone: point.contactPhone,
-      timings: point.timings,
+      name: point.name || 'Pickup Point',
+      address: point.address || 'Address not available',
+      latitude: parseFloat(point.latitude) || 0,
+      longitude: parseFloat(point.longitude) || 0,
+      contactPhone: point.contactPhone || '',
+      timings: point.timings || '9:00 AM - 6:00 PM',
       distance: null as number | null
     }))
+    
+    console.log(`Transformed ${transformedPoints.length} pickup points`)
 
     // Calculate distances if user coordinates provided
     if (userLat && userLon) {
@@ -75,11 +79,17 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Invalid coordinates' })
       }
       
-      transformedPoints = transformedPoints.map(point => ({
-        ...point,
-        distance: isNaN(point.latitude) || isNaN(point.longitude) ? null :
-                 calculateDistance(userLatNum, userLonNum, point.latitude, point.longitude)
-      }))
+      transformedPoints = transformedPoints.map(point => {
+        const distance = (isNaN(point.latitude) || isNaN(point.longitude) || point.latitude === 0 || point.longitude === 0) ? null :
+                        calculateDistance(userLatNum, userLonNum, point.latitude, point.longitude)
+        
+        console.log(`Point ${point.name}: lat=${point.latitude}, lon=${point.longitude}, distance=${distance}`)
+        
+        return {
+          ...point,
+          distance
+        }
+      })
       
       // Sort by distance (valid points first)
       transformedPoints.sort((a, b) => {
@@ -89,8 +99,11 @@ export async function GET(request: NextRequest) {
       })
       
       // Check delivery eligibility
-      const nearestDistance = transformedPoints[0]?.distance
+      const validDistances = transformedPoints.filter(p => p.distance !== null)
+      const nearestDistance = validDistances.length > 0 ? validDistances[0].distance : null
       const canDeliver = nearestDistance !== null && nearestDistance <= 1.0
+      
+      console.log(`Nearest distance: ${nearestDistance}, Can deliver: ${canDeliver}`)
       
       return NextResponse.json({ 
         success: true, 
