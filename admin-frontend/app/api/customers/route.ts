@@ -27,27 +27,45 @@ export async function GET(request: NextRequest) {
     }
 
     const customers = await db.collection('customers').find({}).sort({ created_at: -1 }).toArray()
+    console.log(`Raw customers from DB:`, customers.length)
     
     // Get order counts for each customer
     const transformedCustomers = await Promise.all(
       customers.map(async (customer) => {
-        const orderCount = await db.collection('orders').countDocuments({ 
-          customerEmail: customer.email 
-        })
-        
-        return {
-          id: customer.id || customer._id.toString(),
-          name: customer.name || 'N/A',
-          email: customer.email,
-          phone: customer.phone || 'N/A',
-          coinBalance: customer.coinBalance || 0,
-          status: 'Active',
-          orderHistory: orderCount,
-          joinDate: customer.created_at ? new Date(customer.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          address: customer.address || 'N/A'
+        try {
+          const orderCount = await db.collection('orders').countDocuments({ 
+            customerEmail: customer.email 
+          })
+          
+          return {
+            id: customer.id || customer._id?.toString() || 'unknown',
+            name: customer.name || 'N/A',
+            email: customer.email || 'N/A',
+            phone: customer.phone || 'N/A',
+            coinBalance: customer.coinBalance || 0,
+            status: 'Active',
+            orderHistory: orderCount,
+            joinDate: customer.created_at ? new Date(customer.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            address: customer.address || 'N/A'
+          }
+        } catch (error) {
+          console.error('Error processing customer:', customer.email, error)
+          return {
+            id: customer.id || customer._id?.toString() || 'unknown',
+            name: customer.name || 'N/A',
+            email: customer.email || 'N/A',
+            phone: customer.phone || 'N/A',
+            coinBalance: customer.coinBalance || 0,
+            status: 'Active',
+            orderHistory: 0,
+            joinDate: customer.created_at ? new Date(customer.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            address: customer.address || 'N/A'
+          }
         }
       })
     )
+
+    console.log(`Found ${customers.length} customers in database`)
 
     return NextResponse.json({ success: true, data: transformedCustomers })
   } catch (error) {
