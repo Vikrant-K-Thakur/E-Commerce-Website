@@ -259,7 +259,7 @@ export default function SettingsPage() {
                     href="tel:+919876543210"
                     className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
                   >
-                    +91 98765 43210
+                    +91 78499 83398
                   </a>
                 </div>
                 <p className="text-xs text-blue-600 dark:text-blue-400">

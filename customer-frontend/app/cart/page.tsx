@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, Minus, Trash2, Tag, Wallet } from "lucide-react"
+import { ArrowLeft, Plus, Minus, Trash2, Tag, Wallet, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCart } from "@/contexts/cart-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -26,17 +27,17 @@ export default function CartPage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'online' | 'cod'>('online')
   const [selectedPickupPoint, setSelectedPickupPoint] = useState<any>(null)
   const [pickupPoints, setPickupPoints] = useState<any[]>([])
-  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null)
-  const [canDeliver, setCanDeliver] = useState(true)
-  const [nearestDistance, setNearestDistance] = useState<number | null>(null)
-  const [locationLoading, setLocationLoading] = useState(false)
+
+  const [showAddressDialog, setShowAddressDialog] = useState(false)
+  const [addressForm, setAddressForm] = useState('')
+  const [isUpdatingAddress, setIsUpdatingAddress] = useState(false)
 
   useEffect(() => {
     if (user?.email) {
       loadSessionUsedCoupons()
       fetchWalletBalance()
       fetchPickupPoints()
-      getUserLocation()
+      setAddressForm(user?.address || '')
     }
     // Load Razorpay script
     const script = document.createElement('script')
@@ -49,6 +50,13 @@ export default function CartPage() {
       }
     }
   }, [user?.email])
+
+  // Update address form when user data changes
+  useEffect(() => {
+    if (user?.address) {
+      setAddressForm(user.address)
+    }
+  }, [user?.address])
 
   // Fetch coupons when sessionUsedCoupons changes
   useEffect(() => {
@@ -122,65 +130,68 @@ export default function CartPage() {
     }
   }
 
-  const getUserLocation = () => {
-    setLocationLoading(true)
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
-          }
-          console.log('User location:', location)
-          setUserLocation(location)
-          fetchPickupPoints(location)
-          setLocationLoading(false)
-        },
-        (error) => {
-          console.error('Location access denied:', error)
-          fetchPickupPoints()
-          setLocationLoading(false)
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 10000,
-          maximumAge: 300000
-        }
-      )
-    } else {
-      console.log('Geolocation not supported')
-      fetchPickupPoints()
-      setLocationLoading(false)
-    }
-  }
 
-  const fetchPickupPoints = async (location?: {lat: number, lon: number}) => {
+
+  const fetchPickupPoints = async () => {
     try {
-      const params = location ? `?lat=${location.lat}&lon=${location.lon}` : ''
-      console.log('Fetching pickup points with params:', params)
-      const response = await fetch(`/api/pickup-points${params}`)
+      const response = await fetch('/api/pickup-points')
       const data = await response.json()
-      
-      console.log('Pickup points response:', data)
       
       if (data.success) {
         setPickupPoints(data.data || [])
-        setCanDeliver(data.canDeliver !== false)
-        setNearestDistance(data.nearestDistance || null)
         
-        // Auto-select nearest pickup point if available
+        // Auto-select first pickup point if available
         if (data.data && data.data.length > 0) {
           setSelectedPickupPoint(data.data[0])
         }
       } else {
         console.error('API Error:', data.error)
         setPickupPoints([])
-        setCanDeliver(false)
       }
     } catch (error) {
       console.error('Failed to fetch pickup points:', error)
       setPickupPoints([])
-      setCanDeliver(false)
+    }
+  }
+
+  const handleUpdateAddress = async () => {
+    if (!addressForm.trim()) {
+      alert('Please enter a delivery address')
+      return
+    }
+
+    setIsUpdatingAddress(true)
+    try {
+      const response = await fetch('/api/customer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: user?.name,
+          email: user?.email,
+          phone: user?.phone,
+          address: addressForm.trim()
+        })
+      })
+
+      const result = await response.json()
+      if (result.success) {
+        // Update user context with new address
+        if (user) {
+          const updatedUser = { ...user, address: addressForm.trim() }
+          localStorage.setItem('nxtfit_user', JSON.stringify(updatedUser))
+          window.dispatchEvent(new Event('storage'))
+        }
+        
+        setShowAddressDialog(false)
+        alert('Delivery address updated successfully!')
+      } else {
+        alert('Failed to update address. Please try again.')
+      }
+    } catch (error) {
+      console.error('Failed to update address:', error)
+      alert('Failed to update address. Please try again.')
+    } finally {
+      setIsUpdatingAddress(false)
     }
   }
 
@@ -231,11 +242,6 @@ export default function CartPage() {
     
     if (!selectedPickupPoint) {
       alert('Please select a pickup point')
-      return
-    }
-    
-    if (!canDeliver) {
-      alert('Delivery not available in your area. You are too far from pickup points.')
       return
     }
     
@@ -364,11 +370,6 @@ export default function CartPage() {
     
     if (!selectedPickupPoint) {
       alert('Please select a pickup point')
-      return
-    }
-    
-    if (!canDeliver) {
-      alert('Delivery not available in your area. You are too far from pickup points.')
       return
     }
     
@@ -691,34 +692,57 @@ export default function CartPage() {
 
 
 
+        {/* Delivery Address Section */}
+        {cartItems.length > 0 && (
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Delivery Address</h3>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowAddressDialog(true)}
+                >
+                  {user?.address ? 'Edit Address' : 'Add Address'}
+                </Button>
+              </div>
+              
+              {user?.address ? (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-green-800 mb-1">Delivery Address Set</p>
+                      <p className="text-sm text-green-700 leading-relaxed">{user.address}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-white text-xs">!</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-amber-800 mb-1">No Delivery Address</p>
+                      <p className="text-sm text-amber-700">Please add your delivery address for order delivery</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Pickup Point Selection */}
         {cartItems.length > 0 && (
           <Card>
             <CardContent className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Select Pickup Point</h3>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={getUserLocation}
-                  disabled={locationLoading}
-                >
-                  {locationLoading ? '📍 Locating...' : '📍 Refresh Location'}
-                </Button>
               </div>
-
-              {!canDeliver && nearestDistance && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-red-600 text-lg">⚠️</span>
-                    <span className="font-semibold text-red-800">Delivery Not Available</span>
-                  </div>
-                  <p className="text-sm text-red-700">
-                    You are {nearestDistance}km away from the nearest pickup point. 
-                    We only deliver within 1km radius of pickup points.
-                  </p>
-                </div>
-              )}
 
               {pickupPoints.length > 0 ? (
                 <div className="space-y-3">
@@ -727,20 +751,13 @@ export default function CartPage() {
                       key={point.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                         selectedPickupPoint?.id === point.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                      } ${!canDeliver ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      onClick={() => canDeliver && setSelectedPickupPoint(point)}
+                      }`}
+                      onClick={() => setSelectedPickupPoint(point)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="font-medium text-gray-900">{point.name}</span>
-                            {point.distance !== null && (
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                point.distance <= 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                              }`}>
-                                {point.distance.toFixed(1)}km away
-                              </span>
-                            )}
                           </div>
                           <p className="text-sm text-gray-600 mb-1">📍 {point.address}</p>
                           {point.contactPhone && (
@@ -750,7 +767,7 @@ export default function CartPage() {
                             <p className="text-sm text-gray-600">🕒 {point.timings}</p>
                           )}
                         </div>
-                        {selectedPickupPoint?.id === point.id && canDeliver && (
+                        {selectedPickupPoint?.id === point.id && (
                           <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                             <span className="text-white text-xs">✓</span>
                           </div>
@@ -888,6 +905,50 @@ export default function CartPage() {
       </div>
 
       <BottomNavigation />
+
+      {/* Address Dialog */}
+      <Dialog open={showAddressDialog} onOpenChange={setShowAddressDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              {user?.address ? 'Edit Delivery Address' : 'Add Delivery Address'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Delivery Address</label>
+              <Textarea
+                value={addressForm}
+                onChange={(e) => setAddressForm(e.target.value)}
+                placeholder="Enter your complete delivery address..."
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowAddressDialog(false)
+                  setAddressForm('')
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpdateAddress}
+                disabled={isUpdatingAddress || !addressForm.trim()}
+                className="flex-1"
+              >
+                {isUpdatingAddress ? 'Saving...' : 'Save Address'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   )
