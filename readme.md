@@ -411,8 +411,8 @@ npm run lint
 ### **Contact**
 
 **👨‍💻 Developer**: Vikrant Thakur  
-**📧 Email**: [your-email@example.com](mailto:your-email@example.com)  
-**🔗 LinkedIn**: [Your LinkedIn Profile](https://linkedin.com/in/your-profile)  
+**📧 Email**: [vikrantkthakur123@gmail.com](mailto:vikrantkthakur123@gmail.com)  
+**🔗 LinkedIn**: [Vikrant Thakur](https://www.linkedin.com/in/vikrant-thakur-043279362/)  
 **🐙 GitHub**: [@Vikrant-K-Thakur](https://github.com/Vikrant-K-Thakur)
 
 ---
